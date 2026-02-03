@@ -10,7 +10,7 @@ langchain-community==0.0.24
 
 # PDF Parsing
 pdfplumber==0.10.4
-pypdf==4.0.1
+pypdf==6.6.2
 
 # Google Earth Engine
 earthengine-api==0.1.390
