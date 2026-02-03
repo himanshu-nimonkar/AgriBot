@@ -1,0 +1,181 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+
+    /* Nature + Tech Palette */
+    --color-agri-primary: #2E7D32;
+    --color-agri-accent: #C0CA33;
+    --color-agri-dark: #121212;
+    --color-agri-earth: #8D6E63;
+    --color-agri-alert: #EF4444;
+
+    --color-glass: rgba(18, 18, 18, 0.7);
+    --color-glass-border: rgba(46, 125, 50, 0.2);
+  }
+
+  html {
+    background-color: #050a07;
+    overflow-x: hidden;
+  }
+
+  body {
+    background-color: transparent;
+    background-image: radial-gradient(circle at 50% -10%, #10b98125 0%, #064e3b 20%, #022c22 40%, #050a07 80%);
+    background-attachment: fixed;
+    background-size: cover;
+    color: #e2e8f0;
+    min-height: 100dvh;
+    margin: 0;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: #121212;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: #2E7D32;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #C0CA33;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background-color: rgba(18, 18, 18, 0.65);
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+  }
+
+  .noise-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.03;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    z-index: 0;
+  }
+
+  .status-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    box-shadow: 0 0 10px currentColor;
+  }
+
+  .status-dot.healthy {
+    background-color: #10b981;
+    /* emerald-500 */
+    color: #10b981;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .status-dot.warning {
+    background-color: #C0CA33;
+    color: #C0CA33;
+  }
+
+  .status-dot.critical {
+    background-color: #ef4444;
+    /* red-500 */
+    color: #ef4444;
+  }
+
+  .heading-lg {
+    font-size: clamp(1.25rem, 4vw, 2rem);
+    font-weight: 700;
+  }
+
+  .text-secondary {
+    color: rgba(148, 163, 184, 0.8);
+  }
+
+  .glow-text {
+    text-shadow: 0 0 20px rgba(46, 125, 50, 0.5);
+  }
+
+  .glow-hover:hover {
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.3);
+  }
+
+  .leaflet-container {
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: #121212 !important;
+    font-family: 'Inter', sans-serif !important;
+  }
+}
+
+@layer utilities {
+
+  .leaflet-popup-content-wrapper,
+  .leaflet-popup-tip {
+    background: rgba(18, 18, 18, 0.9) !important;
+    backdrop-filter: blur(8px) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .typing-dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    background-color: #34d399;
+    /* emerald-400 */
+    border-radius: 9999px;
+    display: inline-block;
+    margin-left: 0.125rem;
+    margin-right: 0.125rem;
+    animation: wave 1.2s infinite ease-in-out;
+  }
+
+  .typing-dot:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+
+  .typing-dot:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+
+  .skeleton {
+    @apply animate-pulse bg-white/10 rounded;
+  }
+}
+
+@keyframes wave {
+
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}

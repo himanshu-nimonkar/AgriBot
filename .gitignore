@@ -1,0 +1,16 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/
+.next/
+dist/
+build/
+*.log
+.DS_Store
+# Google Earth Engine Key
+indigo-splice-485617-j0-873f46d5b26f.json
+backend/config/*.json
+
+.vscode

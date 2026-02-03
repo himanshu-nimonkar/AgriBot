@@ -1,0 +1,93 @@
+[
+    {
+        "product_name": "Agri-Mek SC",
+        "active_ingredient": "Abamectin",
+        "crops": [
+            "almonds",
+            "walnuts",
+            "grapes",
+            "tomatoes"
+        ],
+        "pests": [
+            "mites",
+            "leafminers",
+            "psyllids"
+        ],
+        "rate": "2.25 - 4.25 fl oz/acre",
+        "rei": "12 hours",
+        "phi": "21 days (Almonds, Walnuts), 28 days (Grapes), 7 days (Tomatoes)",
+        "notes": "highly toxic to bees; do not apply during bloom."
+    },
+    {
+        "product_name": "Confidor 200 SL",
+        "active_ingredient": "Imidacloprid",
+        "crops": [
+            "tomatoes",
+            "grapes",
+            "pistachios"
+        ],
+        "pests": [
+            "aphids",
+            "whiteflies",
+            "leafhoppers"
+        ],
+        "rate": "0.5 - 0.75 pint/acre",
+        "rei": "12 hours",
+        "phi": "0 days (Tomatoes), 30 days (Grapes)",
+        "notes": "Systemic insecticide. Toxic to aquatic invertebrates."
+    },
+    {
+        "product_name": "Luna Experience",
+        "active_ingredient": "Fluopyram + Tebuconazole",
+        "crops": [
+            "almonds",
+            "pistachios",
+            "wine_grapes"
+        ],
+        "pests": [
+            "powdery mildew",
+            "alternaria",
+            "botrytis"
+        ],
+        "rate": "6.0 - 10.0 fl oz/acre",
+        "rei": "12 hours",
+        "phi": "35 days (Almonds), 14 days (Grapes)",
+        "notes": "Excellent for fungal disease control. Rotate with other MOA groups."
+    },
+    {
+        "product_name": "Intrepid 2F",
+        "active_ingredient": "Methoxyfenozide",
+        "crops": [
+            "almonds",
+            "walnuts",
+            "tomatoes"
+        ],
+        "pests": [
+            "navel orangeworm",
+            "peach twig borer",
+            "armyworms"
+        ],
+        "rate": "12 - 24 fl oz/acre",
+        "rei": "4 hours",
+        "phi": "7 days (Almonds), 1 day (Tomatoes)",
+        "notes": "IGR (Insect Growth Regulator). Safe for beneficials."
+    },
+    {
+        "product_name": "Roundup PowerMax",
+        "active_ingredient": "Glyphosate",
+        "crops": [
+            "almonds",
+            "walnuts",
+            "pistachios",
+            "grapes"
+        ],
+        "pests": [
+            "weeds",
+            "grasses"
+        ],
+        "rate": "22 - 44 fl oz/acre",
+        "rei": "4 hours",
+        "phi": "14 days",
+        "notes": "Non-selective herbicide. Avoid contact with green foliage/stems."
+    }
+]
