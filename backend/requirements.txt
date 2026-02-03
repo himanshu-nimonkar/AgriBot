@@ -17,7 +17,7 @@ earthengine-api==0.1.390
 
 # HTTP Client
 httpx==0.26.0
-aiohttp==3.9.3
+aiohttp==3.13.3
 
 # Environment & Config
 python-dotenv==1.0.1
