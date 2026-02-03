@@ -1,0 +1,79 @@
+
+version: '3.8'
+
+services:
+  # 1. Redis for Cache/Sessions/RateLimit/Celery
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID}
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+      - VAPI_PRIVATE_KEY=${VAPI_PRIVATE_KEY}
+      - VAPI_PUBLIC_KEY=${VAPI_PUBLIC_KEY}
+      - GEE_SERVICE_ACCOUNT_FILE=/app/backend/config/indigo-splice-485617-j0-873f46d5b26f.json
+    volumes:
+      - ./backend:/app/backend  # Hot reload logic
+      - ./data:/app/data        # Data persistence
+    depends_on:
+      - redis
+
+  # 3. Celery Worker (Async Tasks)
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: celery -A backend.worker.celery_app worker --loglevel=info
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - GEE_SERVICE_ACCOUNT_FILE=/app/backend/config/indigo-splice-485617-j0-873f46d5b26f.json
+      # Pass other env vars similarly
+      - CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID}
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+    volumes:
+      - ./backend:/app/backend
+      - ./data:/app/data
+    depends_on:
+      - redis
+      - backend
+
+  # 4. Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "5173:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+  # 5. Cloudflare Tunnel
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --url http://backend:8000
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+volumes:
+  redis_data:

@@ -1,0 +1,17 @@
+name = "agribot-backend"
+main = "main.py"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["python_workers"]
+
+[vars]
+YOLO_COUNTY_LAT = "38.7646"
+YOLO_COUNTY_LON = "-121.9018"
+BACKEND_HOST = "0.0.0.0"
+BACKEND_PORT = "8000"
+
+[ai]
+binding = "AI"
+
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "agribot-knowledge"
