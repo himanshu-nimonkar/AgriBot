@@ -19,7 +19,7 @@ class GeocodingService:
         Returns None if not found.
         """
         try:
-            print(f"🌍 Geocoding: {address}")
+            print(f"[INFO] Geocoding: {address}")
             params = {
                 "q": address,
                 "format": "json",
@@ -48,7 +48,7 @@ class GeocodingService:
                 lon = float(result["lon"])
                 display_name = result["display_name"]
                 
-                print(f"📍 Resolved: {display_name} ({lat}, {lon})")
+                print(f"[INFO] Resolved: {display_name} ({lat}, {lon})")
                 return lat, lon, display_name
                 
         except Exception as e:

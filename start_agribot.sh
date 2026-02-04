@@ -58,8 +58,10 @@ echo -e "${BLUE}🚀 Starting FastAPI Backend (Port 8000)...${NC}"
 export PYTHONPATH=$PYTHONPATH:$(pwd)/backend
 # Disable Redis for local/dev mode to avoid needing Docker 
 export REDIS_URL="" 
-nohup python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload > backend.log 2>&1 &
+cd backend
+nohup python -m uvicorn main:app --host 0.0.0.0 --port 8000 > ../backend.log 2>&1 &
 BACKEND_PID=$!
+cd ..
 echo "   Backend PID: $BACKEND_PID"
 
 echo "   Waiting for backend to heat up..."

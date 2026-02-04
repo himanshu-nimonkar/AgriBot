@@ -125,25 +125,28 @@ function WhyBox({ results = [], sources = [], marketData, chemicalData = [], api
                             ) : (
                                 /* Fallback to Simple Sources List */
                                 sources.map((src, idx) => (
-                                    <li key={idx} className="flex flex-col gap-1 items-start text-sm text-slate-400">
-                                        <div className="flex gap-2 items-center">
-                                            <div className="min-w-[1.2rem] h-5 flex items-center justify-center rounded bg-slate-800 text-slate-500 text-[10px] font-mono border border-slate-700">
+                                    <li key={idx} className="group cursor-default">
+                                        <div className="flex gap-3">
+                                            <div className="mt-1 min-w-[1.5rem] h-6 flex items-center justify-center rounded-md bg-emerald-900/30 text-emerald-400 text-xs font-mono border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
                                                 {idx + 1}
                                             </div>
-                                            <span>{src}</span>
+                                            <div className="space-y-1 w-full">
+                                                <p className="text-sm text-slate-300 leading-relaxed group-hover:text-white transition-colors">
+                                                    {src}
+                                                </p>
+                                                <div className="flex items-center justify-end mt-2">
+                                                    <a
+                                                        href={`${apiUrl.replace(/\/+$/, "")}/research/${src.includes('.') ? src : src + '.pdf'}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-1 px-2 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[10px] font-medium transition-colors border border-emerald-500/20"
+                                                    >
+                                                        <BookOpen size={10} />
+                                                        View Document
+                                                    </a>
+                                                </div>
+                                            </div>
                                         </div>
-                                        {/* Fallback Button for Filenames in simple list */}
-                                        {(src.toLowerCase().endsWith('.pdf') || src.toLowerCase().endsWith('.json') || src.toLowerCase().endsWith('.txt') || src.toLowerCase().endsWith('.md')) && (
-                                             <a
-                                                href={`${apiUrl.replace(/\/+$/, "")}/research/${src}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="ml-7 flex items-center gap-1 px-2 py-1 rounded bg-slate-800/50 hover:bg-slate-700/50 text-emerald-400 text-[10px] font-medium transition-colors border border-slate-700/50 max-w-fit"
-                                            >
-                                                <BookOpen size={10} />
-                                                View Document
-                                            </a>
-                                        )}
                                     </li>
                                 ))
                             )}

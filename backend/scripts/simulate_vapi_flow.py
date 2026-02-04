@@ -21,7 +21,7 @@ async def simulate_vapi_call():
         "call": {"id": "sim-call-123"}
     }
 
-    print(f"📞 Initializing Simulated Call to {url}...")
+    print(f"[INFO] Initializing Simulated Call to {url}...")
     start_time = time.time()
     
     first_token_time = None
@@ -34,12 +34,12 @@ async def simulate_vapi_call():
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload) as response:
                 if response.status != 200:
-                    print(f"❌ Connection Failed: HTTP {response.status}")
+                    print(f"[ERROR] Connection Failed: HTTP {response.status}")
                     text = await response.text()
                     print(f"Response: {text}")
                     return
 
-                print(f"✅ Connection Established (HTTP 200) in {time.time() - start_time:.2f}s")
+                print(f"[SUCCESS] Connection Established (HTTP 200) in {time.time() - start_time:.2f}s")
                 
                 async for line in response.content:
                     current_time = time.time()
@@ -52,7 +52,7 @@ async def simulate_vapi_call():
                     # Handle SSE Comments (Keep-Alive)
                     if decoded_line.startswith(":"):
                         keep_alive_count += 1
-                        print(f"💓 Keep-alive received at {elapsed:.2f}s")
+                        print(f"[INFO] Keep-alive received at {elapsed:.2f}s")
                         continue
                         
                     # Handle Data Frames
@@ -60,7 +60,7 @@ async def simulate_vapi_call():
                         data_content = decoded_line[6:]
                         
                         if data_content == "[DONE]":
-                            print(f"🏁 Stream Complete at {elapsed:.2f}s")
+                            print(f"[INFO] Stream Complete at {elapsed:.2f}s")
                             break
                         
                         try:
@@ -77,12 +77,12 @@ async def simulate_vapi_call():
                             if content:
                                 if first_token_time is None:
                                     first_token_time = elapsed
-                                    print(f"⚡ First Token Received at {first_token_time:.2f}s")
+                                    print(f"[INFO] First Token Received at {first_token_time:.2f}s")
                                 
                                 # Detect Filler
                                 if not filler_received and "Just a moment" in (filler_content + content):
                                     filler_received = True
-                                    print(f"🗣️  Filler Phrase Detected at {elapsed:.2f}s: '(Just a moment...)'")
+                                    print(f"[INFO] Filler Phrase Detected at {elapsed:.2f}s: '(Just a moment...)'")
                                     
                                 if filler_received and "Just a moment" in (filler_content + content):
                                      filler_content += content
@@ -94,16 +94,16 @@ async def simulate_vapi_call():
                                 # sys.stdout.flush()
 
                         except json.JSONDecodeError:
-                            print(f"❌ JSON Decode Error: {decoded_line}")
+                            print(f"[ERROR] JSON Decode Error: {decoded_line}")
     except Exception as e:
-        print(f"❌ Simulation Failed: {e}")
+        print(f"[ERROR] Simulation Failed: {e}")
         return
 
     # Final Report
-    print("\n\n📊 CALL SIMULATION REPORT")
+    print("\n\n[INFO] CALL SIMULATION REPORT")
     print("=========================")
     print(f"Total Duration:      {time.time() - start_time:.2f}s")
-    print(f"Time to First Token: {first_token_time:.2f}s " + ("(✅ Excellent)" if first_token_time < 2.0 else "(⚠️ Slow)"))
+    print(f"Time to First Token: {first_token_time:.2f}s " + ("(Excellent)" if first_token_time < 2.0 else "(Slow)"))
     print(f"Filler Triggered:    {'Yes' if filler_received else 'No'}")
     print(f"Keep-Alives:         {keep_alive_count}")
     print("-------------------------")
@@ -112,9 +112,9 @@ async def simulate_vapi_call():
     print("=========================")
     
     if first_token_time and first_token_time < 2.0 and filler_received:
-        print("✅ SUCCESS: The endpoints are behaving correctly for Vapi latency requirements.")
+        print("[SUCCESS] The endpoints are behaving correctly for Vapi latency requirements.")
     else:
-        print("⚠️  WARNING: Latency may still be too high for Vapi limits.")
+        print("[WARNING] Latency may still be too high for Vapi limits.")
 
 if __name__ == "__main__":
     asyncio.run(simulate_vapi_call())

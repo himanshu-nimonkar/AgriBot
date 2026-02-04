@@ -23,7 +23,7 @@ def test_vapi():
         "temperature": 0.7
     }
     
-    print(f"🎤 Sending Vapi Simulation: {payload['messages'][-1]['content']}")
+    print(f"[INFO] Sending Vapi Simulation: {payload['messages'][-1]['content']}")
     try:
         response = requests.post(URL, json=payload)
         response.raise_for_status()
@@ -33,7 +33,7 @@ def test_vapi():
         # OR it returns the Vapi custom structure depending on implementation.
         # Let's inspect raw.
         
-        print("\n✅ Response Status:", response.status_code)
+        print("\n[SUCCESS] Response Status:", response.status_code)
         
         # Helper to print stream or json
         try:
@@ -43,7 +43,7 @@ def test_vapi():
             print("Response text:", response.text)
             
     except requests.exceptions.RequestException as e:
-        print(f"\n❌ Request Failed: {e}")
+        print(f"\n[ERROR] Request Failed: {e}")
         if e.response is not None:
              print(f"Status: {e.response.status_code}")
              print(f"Detail: {e.response.text}")

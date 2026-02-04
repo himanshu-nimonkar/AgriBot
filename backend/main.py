@@ -92,7 +92,7 @@ manager = ConnectionManager()
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
     # Startup
-    print("🌱 Yolo Deep-Ag Copilot starting...")
+    print("[INFO] Yolo Deep-Ag Copilot starting...")
     print(f"   Location: Yolo County, CA ({settings.yolo_county_lat}, {settings.yolo_county_lon})")
     
     # Initialize Rate Limiter (if Redis available)
@@ -101,17 +101,17 @@ async def lifespan(app: FastAPI):
         try:
             r = redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
             await FastAPILimiter.init(r)
-            print("✅ Rate Limiter initialized with Redis")
+            print("[SUCCESS] Rate Limiter initialized with Redis")
         except Exception as e:
-            print(f"⚠️ Rate Limiter failed to initialize: {e}")
+            print(f"[WARNING] Rate Limiter failed to initialize: {e}")
     else:
-        print("ℹ️ Rate Limiter disabled (No REDIS_URL)")
+        print("[INFO] Rate Limiter disabled (No REDIS_URL)")
 
     # Initialize services
     yield
     
     # Shutdown
-    print("🛑 Shutting down services...")
+    print("[INFO] Shutting down services...")
     await weather_service.close()
     await rag_service.close()
     await llm_service.close()
@@ -182,11 +182,10 @@ from fastapi.staticfiles import StaticFiles
 import os
 
 # Mount static files for research PDFs
-# Ensure directory exists
-# Mount static files for research PDFs
-# Ensure directory exists
-os.makedirs("data", exist_ok=True)
-app.mount("/research", StaticFiles(directory="data"), name="research")
+# Use parent directory to access data/research
+research_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "research")
+os.makedirs(research_dir, exist_ok=True)
+app.mount("/research", StaticFiles(directory=research_dir), name="research")
 
 @app.post("/api/analyze", response_model=AnalyzeResponse, dependencies=[Depends(SafeRateLimiter(times=50, seconds=60))])
 async def analyze(request: AnalyzeRequest):
@@ -349,8 +348,10 @@ async def vapi_webhook(request: Request):
         return JSONResponse({"status": "ok"})
         
     except Exception as e:
-        print(f"Vapi webhook error: {e}")
-        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+        # Log full error internally but don't expose details to client
+        import traceback
+        print(f"Vapi webhook error: {traceback.format_exc()}")
+        return JSONResponse({"status": "error", "message": "Internal server error"}, status_code=500)
 
 
 @app.post("/api/vapi-llm", dependencies=[Depends(SafeRateLimiter(times=100, seconds=60))])
@@ -379,7 +380,7 @@ async def vapi_llm_endpoint(request: Request):
         if not user_message:
             user_message = "Hello"
         
-        print(f"🎤 Vapi User Message ({session_id}): {user_message}")
+        print(f"[INFO] Vapi User Message ({session_id}): {user_message}")
         start_time = datetime.now()
 
         # Always stream to handle latency gracefully
@@ -446,7 +447,7 @@ async def vapi_llm_endpoint(request: Request):
             # 3. FINAL RESULT
             response = await processing_task
             duration = (datetime.now() - start_time).total_seconds()
-            print(f"🤖 Vapi Response ({duration:.2f}s) Ready")
+            print(f"[INFO] Vapi Response ({duration:.2f}s) Ready")
 
             # Calculate what we've already said (fillers)
             # The LLM response usually assumes it's the start. 

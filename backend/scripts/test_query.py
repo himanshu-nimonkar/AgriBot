@@ -15,20 +15,20 @@ def test_query():
         "session_id": "cli-test-session"
     }
     
-    print(f"🚀 Sending Query: {payload['query']}")
+    print(f"[INFO] Sending Query: {payload['query']}")
     try:
         response = requests.post(URL, json=payload)
         response.raise_for_status()
         data = response.json()
         
-        print("\n✅ Response Received:")
+        print("\n[SUCCESS] Response Received:")
         print(json.dumps(data, indent=2))
         
         # Check for date fields
         print(f"\nTime Check: {data.get('timestamp')}")
         
     except requests.exceptions.RequestException as e:
-        print(f"\n❌ Request Failed: {e}")
+        print(f"\n[ERROR] Request Failed: {e}")
         if e.response is not None:
              print(f"Status: {e.response.status_code}")
              print(f"Detail: {e.response.text}")

@@ -49,12 +49,12 @@ class SessionManager:
             try:
                 self.redis_client = redis.from_url(redis_url, decode_responses=True)
                 self.redis_client.ping()
-                print("✅ Session Manager: Connected to Redis")
+                print("[SUCCESS] Session Manager: Connected to Redis")
             except Exception as e:
-                print(f"⚠️ Session Manager: Redis connection failed ({e}), using in-memory store.")
+                print(f"[WARNING] Session Manager: Redis connection failed ({e}), using in-memory store.")
                 self.redis_client = None
         else:
-            print("ℹ️ Session Manager: Using in-memory store (No REDIS_URL)")
+            print("[INFO] Session Manager: Using in-memory store (No REDIS_URL)")
 
     def _get_redis_key(self, session_id: str) -> str:
         return f"agribot:session:{session_id}"

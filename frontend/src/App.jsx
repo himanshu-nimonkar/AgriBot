@@ -24,7 +24,21 @@ import throttle from 'lodash.throttle'
 const getApiBaseUrl = () => {
     const params = new URLSearchParams(window.location.search);
     const override = params.get('api_url');
-    if (override) return override;
+    
+    if (override) {
+        try {
+            const parsed = new URL(override, window.location.origin);
+            // Only allow http/https to avoid javascript: and other unsafe schemes
+            if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+                // Use the origin + pathname (no query/fragment) as the base URL
+                return parsed.origin + parsed.pathname.replace(/\/+$/, '');
+            }
+        } catch (e) {
+            // If parsing fails, ignore the override and fall back to default
+            console.warn('Invalid api_url parameter, using default');
+        }
+    }
+    
     // Default to the Cloudflare Tunnel if in prod/preview, or localhost for dev if not set
     return import.meta.env.VITE_API_URL || 'https://waterproof-hand-andrew-segments.trycloudflare.com';
 }
@@ -55,10 +69,20 @@ window.USER_WS_URL = WS_URL; // Expose for debug probe
 const RENDER_API_URL = API_BASE_URL;
 
 
-// Custom UUID generator fallback (if package fails)
+// Custom UUID generator using cryptographically secure random
 const generateUUID = () => {
     if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID()
-    return Math.random().toString(36).substring(2) + Date.now().toString(36)
+    // Fallback to cryptographically secure random bytes
+    if (window.crypto && window.crypto.getRandomValues) {
+        const bytes = new Uint8Array(16);
+        window.crypto.getRandomValues(bytes);
+        bytes[6] = (bytes[6] & 0x0f) | 0x40; // Version 4
+        bytes[8] = (bytes[8] & 0x3f) | 0x80; // Variant 10
+        const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+        return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20,32)}`;
+    }
+    // Last resort fallback (should never happen in modern browsers)
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
 }
 
 function App() {
@@ -249,11 +273,7 @@ function App() {
 
             // Clear Weather & Satellite Data
             setWeatherData(null)
-            setSatelliteData({
-                ndvi_current: 0,
-                water_stress_level: 'N/A',
-                last_updated: new Date().toISOString()
-            })
+            setSatelliteData(null)
 
             // Trigger auto-locate to find user again
             handleLocateMe()
@@ -375,10 +395,10 @@ function App() {
             </div>
 
             {/* Main Content Area - Flexible Region */}
-            <main className="relative z-10 flex-1 min-h-0 w-full max-w-7xl mx-auto p-4 grid grid-cols-1 md:grid-cols-12 gap-6 overflow-y-auto">
+            <main className="relative z-10 flex-1 min-h-0 w-full max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden pb-12">
 
                 {/* Left Column */}
-                <div className="col-span-1 md:col-span-12 lg:col-span-7 flex flex-col gap-6 h-full overflow-y-auto custom-scrollbar pr-2 hidden lg:flex">
+                <div className="hidden lg:flex lg:col-span-7 flex-col gap-6 h-full overflow-y-auto custom-scrollbar pr-2">
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -409,19 +429,19 @@ function App() {
                         </div>
 
                         {/* Weather Data */}
-                        <div className="shrink-0 pb-10">
+                        <div className="shrink-0">
                             <WeatherTelemetry data={weatherData} />
                         </div>
                     </motion.div>
                 </div>
 
                 {/* Mobile View - Chat First, Then Dropdowns */}
-                <div className="lg:hidden col-span-1 flex flex-col gap-3 pb-32">
+                <div className="lg:hidden flex flex-col gap-3 pb-0">
 
                     {/* 1. Chat (Main Priority) - Taken from Right Column logic above but simplified for mobile */}
-                    <div className="flex-1 glass-card flex flex-col overflow-hidden border-emerald-500/10 relative h-[50vh]">
+                    <div className="flex-1 glass-card flex flex-col border-emerald-500/10 relative h-[50vh] rounded-2xl overflow-hidden">
                         {/* Header */}
-                        <div className="rounded-t-[20px] pt-8 pb-4 px-3 border-b border-white/5 bg-gradient-to-r from-slate-900/50 to-transparent flex justify-between items-center shrink-0">
+                        <div className="pt-8 pb-4 px-3 border-b border-white/5 bg-gradient-to-r from-slate-900/50 to-transparent flex justify-between items-center shrink-0">
                             <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-2 glow-text">
                                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_currentColor]"></span>
                                 Agri-Brain
@@ -550,7 +570,7 @@ function App() {
                 </div>
 
                 {/* Right Column: Chat & Context (Desktop Only) */}
-                <div className="hidden lg:flex col-span-1 md:col-span-12 lg:col-span-5 flex-col h-full gap-4 overflow-hidden">
+                <div className="hidden lg:flex lg:col-span-5 flex-col gap-4 overflow-hidden" style={{height: 'calc(100vh - 140px)'}}>
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -558,10 +578,9 @@ function App() {
                         className="flex flex-col h-full gap-4 overflow-hidden"
                     >
                         {/* Chat Area */}
-                        <div className="flex-1 glass-card flex flex-col overflow-hidden border-emerald-500/10 relative min-h-[500px] md:min-h-0">
+                        <div className="flex-1 glass-card flex flex-col border-emerald-500/10 relative min-h-[500px] md:min-h-0 rounded-2xl overflow-hidden">
                             {/* Header */}
-                            {/* Header - No rounding here, relies on parent overflow-hidden for perfect corner match */}
-                            <div className="rounded-t-[20px] pt-8 pb-6 px-4 border-b border-white/5 bg-gradient-to-r from-slate-900/50 to-transparent flex justify-between items-center shrink-0">
+                            <div className="pt-8 pb-6 px-4 border-b border-white/5 bg-gradient-to-r from-slate-900/50 to-transparent flex justify-between items-center shrink-0">
                                 <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-2 glow-text">
                                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_currentColor]"></span>
                                     Agri-Brain Active

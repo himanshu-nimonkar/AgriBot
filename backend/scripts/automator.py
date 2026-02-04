@@ -17,7 +17,7 @@ BACKEND_DIR = os.path.join(AGRIBOT_ROOT, "backend")
 FRONTEND_DIR = os.path.join(AGRIBOT_ROOT, "frontend")
 
 def start_backend():
-    print("🌱 Starting FastAPI Backend...")
+    print("[INFO] Starting FastAPI Backend...")
     # Use 127.0.0.1 to be explicit for cloudflared
     # Redirect stderr to stdout so we see errors in the console
     # Use sys.executable to ensure we use the same python environment
@@ -30,7 +30,7 @@ def start_backend():
     return backend
 
 def start_tunnel():
-    print("🚇 Starting Cloudflare Tunnel...")
+    print("[INFO] Starting Cloudflare Tunnel...")
     tunnel = subprocess.Popen(
         ["cloudflared", "tunnel", "--url", "http://localhost:8000"],
         stdout=subprocess.PIPE,
@@ -54,19 +54,19 @@ def get_tunnel_url(tunnel_process):
     return None
 
 def update_frontend_and_deploy(public_url):
-    print(f"\n📝 Injecting URL into Frontend: {public_url}")
+    print(f"\n[INFO] Injecting URL into Frontend: {public_url}")
     
-    print(f"🔨 Building Frontend (Vite) with VITE_API_URL={public_url}...")
+    print(f"[INFO] Building Frontend (Vite) with VITE_API_URL={public_url}...")
     try:
         # Pass VITE_API_URL via environment variables instead of writing a file
         build_env = os.environ.copy()
         build_env["VITE_API_URL"] = public_url
         subprocess.run(["npm", "run", "build"], cwd=FRONTEND_DIR, check=True, stdout=subprocess.DEVNULL, env=build_env)
     except subprocess.CalledProcessError:
-        print("❌ Frontend Build Failed!")
+        print("[ERROR] Frontend Build Failed!")
         return False
         
-    print("🚀 Deploying to Cloudflare Pages...")
+    print("[INFO] Deploying to Cloudflare Pages...")
     try:
         subprocess.run(
             ["npx", "wrangler", "pages", "deploy", "dist", "--project-name", "agribot-dashboard"], 
@@ -74,18 +74,18 @@ def update_frontend_and_deploy(public_url):
             check=True,
             stdout=subprocess.PIPE # Capture output to avoid too much noise
         )
-        print("✅ Deployment Successful!")
+        print("[SUCCESS] Deployment Successful!")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"❌ Deployment Failed: {e}")
+        print(f"[ERROR] Deployment Failed: {e}")
         return False
 
 def update_vapi(public_url):
     if not VAPI_PRIVATE_KEY:
-        print("⚠️ VAPI_PRIVATE_KEY not found. Skipping Vapi update.")
+        print("[WARNING] VAPI_PRIVATE_KEY not found. Skipping Vapi update.")
         return
 
-    print(f"🤖 Updating Vapi Webhook...")
+    print(f"[INFO] Updating Vapi Webhook...")
     headers = {"Authorization": f"Bearer {VAPI_PRIVATE_KEY}", "Content-Type": "application/json"}
     
     try:
@@ -116,16 +116,16 @@ def update_vapi(public_url):
                 
                 patch_resp = requests.patch(patch_url, json=payload, headers=headers)
                 if patch_resp.status_code == 200:
-                    print(f"✅ Vapi Configured: {target_assistant.get('name')}")
+                    print(f"[SUCCESS] Vapi Configured: {target_assistant.get('name')}")
                 else:
-                    print(f"❌ Vapi Update Failed: {patch_resp.text}")
+                    print(f"[ERROR] Vapi Update Failed: {patch_resp.text}")
             else:
-                print("⚠️ No Assistant found.")
+                print("[WARNING] No Assistant found.")
     except Exception as e:
-        print(f"⚠️ Vapi Error: {e}")
+        print(f"[WARNING] Vapi Error: {e}")
 
 def start_local_frontend():
-    print("💻 Starting Local Dashboard...")
+    print("[INFO] Starting Local Dashboard...")
     # npm run dev
     frontend = subprocess.Popen(
         ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"],
@@ -142,27 +142,27 @@ def main():
         public_url = get_tunnel_url(tunnel)
         
         if public_url:
-            print(f"🌍 Tunnel Live: {public_url}")
+            print(f"[INFO] Tunnel Live: {public_url}")
             
             # 2. Deploy to Cloudflare (uses Tunnel URL for public access)
             # We wrap this in a try-except so the local app STILL starts even if remote deploy fails
             try:
                 update_frontend_and_deploy(public_url)
             except Exception as e:
-                print(f"⚠️ Remote Deployment Failed (Permissions?): {e}")
-                print("⚠️ Proceeding with Local Dashboard Only.")
+                print(f"[WARNING] Remote Deployment Failed (Permissions?): {e}")
+                print("[WARNING] Proceeding with Local Dashboard Only.")
             
             # 3. Start Local Frontend (Guaranteed Access)
             # Reads VITE_API_URL=http://127.0.0.1:8000 from root .env because we set envDir: '..' in vite.config.js
-            print(f"📝 Starting Local Frontend (Local Stable)")
+            print(f"[INFO] Starting Local Frontend (Local Stable)")
 
             start_local_frontend()
             
             print("\n" + "="*60)
-            print("🎉 SYSTEM READY!")
+            print("[SUCCESS] SYSTEM READY!")
             print("1. Backend & Tunnel: Running")
             print("2. Vapi Voice: Connected")
-            print("3. 👉 OPEN DASHBOARD: http://localhost:5173")
+            print("3. OPEN DASHBOARD: http://localhost:5173")
             print("   (Use this local link. The .pages.dev one may be outdated)")
             print("="*60 + "\n")
             
@@ -170,12 +170,12 @@ def main():
             while True:
                 time.sleep(1)
         else:
-            print("❌ Failed to retrieve URL.")
+            print("[ERROR] Failed to retrieve URL.")
             backend.terminate()
             tunnel.terminate()
             
     except KeyboardInterrupt:
-        print("\n🛑 Stopping...")
+        print("\n[INFO] Stopping...")
         if 'backend' in locals(): backend.terminate()
         if 'tunnel' in locals(): tunnel.terminate()
         sys.exit(0)
