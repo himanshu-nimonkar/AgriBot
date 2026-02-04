@@ -46,7 +46,7 @@ class DataIngester:
         - Tables with crop data
         - Economic statistics
         """
-        print(f"📄 Parsing PDF: {pdf_path}")
+        print(f"[INFO] Parsing PDF: {pdf_path}")
         
         all_text = []
         tables = []
@@ -160,7 +160,7 @@ class DataIngester:
             response = self.client.post(url, json={"text": batch})
             
             if response.status_code != 200:
-                print(f"   ⚠ Embedding error: {response.text}")
+                print(f"   [WARNING] Embedding error: {response.text}")
                 continue
             
             result = response.json()
@@ -179,11 +179,11 @@ class DataIngester:
             indexes = response.json().get("result", [])
             for idx in indexes:
                 if idx.get("name") == self.index_name:
-                    print(f"✓ Index '{self.index_name}' already exists")
+                    print(f"[INFO] Index '{self.index_name}' already exists")
                     return True
         
         # Create new index
-        print(f"📦 Creating Vectorize index '{self.index_name}'...")
+        print(f"[INFO] Creating Vectorize index '{self.index_name}'...")
         
         payload = {
             "name": self.index_name,
@@ -196,10 +196,10 @@ class DataIngester:
         response = self.client.post(url, json=payload)
         
         if response.status_code in [200, 201]:
-            print(f"✓ Index created successfully")
+            print(f"[SUCCESS] Index created successfully")
             return True
         else:
-            print(f"⚠ Index creation failed: {response.text}")
+            print(f"[WARNING] Index creation failed: {response.text}")
             return False
     
     def upsert_vectors(self, chunks: List[Dict], embeddings: List[List[float]]):
@@ -245,7 +245,7 @@ class DataIngester:
             )
             
             if response.status_code != 200:
-                print(f"   ⚠ Upsert error: {response.text}")
+                print(f"   [WARNING] Upsert error: {response.text}")
     
     def _detect_crop(self, text: str) -> str:
         """Detect which crop a text chunk is about."""
@@ -268,7 +268,7 @@ class DataIngester:
     
     def add_uc_ipm_data(self):
         """Add UC IPM guidelines for the Top 6 crops."""
-        print("📚 Adding UC IPM knowledge base...")
+        print("[INFO] Adding UC IPM knowledge base...")
         
         # Pre-defined UC IPM knowledge (would normally be scraped)
         uc_ipm_data = [
@@ -372,21 +372,21 @@ class DataIngester:
             )
             
             if response.status_code == 200:
-                print(f"✓ Added {len(uc_ipm_data)} UC IPM knowledge chunks")
+                print(f"[SUCCESS] Added {len(uc_ipm_data)} UC IPM knowledge chunks")
             else:
-                print(f"⚠ UC IPM upsert error: {response.text}")
+                print(f"[WARNING] UC IPM upsert error: {response.text}")
     
     def run(self, pdf_path: str):
         """Run the full ingestion pipeline."""
         print("\n" + "="*50)
         self.current_pdf_name = pdf_path
         print("\n" + "="*50)
-        print(f"🌱 Processing: {Path(pdf_path).name}")
+        print(f"[INFO] Processing: {Path(pdf_path).name}")
         print("="*50 + "\n")
         
         # Step 1: Create Vectorize index
         if not self.create_vectorize_index():
-            print("❌ Failed to create index. Aborting.")
+            print("[ERROR] Failed to create index. Aborting.")
             return
         
         # Step 2: Parse PDF
@@ -398,16 +398,16 @@ class DataIngester:
         all_chunks = text_chunks + table_chunks
         
         # Step 4: Generate embeddings
-        print("\n🔢 Generating embeddings...")
+        print("\n[INFO] Generating embeddings...")
         texts = [chunk["text"] for chunk in all_chunks]
         embeddings = self.generate_embeddings(texts)
         
         if not embeddings:
-            print("❌ Failed to generate embeddings. Aborting.")
+            print("[ERROR] Failed to generate embeddings. Aborting.")
             return
         
         # Step 5: Upsert to Vectorize
-        print("\n📤 Uploading to Vectorize...")
+        print("\n[INFO] Uploading to Vectorize...")
         self.upsert_vectors(all_chunks, embeddings)
         
         # Step 6: Add UC IPM data
@@ -426,9 +426,9 @@ class DataIngester:
             }, f, indent=2)
         
         print("\n" + "="*50)
-        print("✅ Ingestion complete!")
-        print(f"   • {len(all_chunks)} chunks from PDF")
-        print(f"   • UC IPM guidelines for 6 crops")
+        print("[SUCCESS] Ingestion complete!")
+        print(f"   - {len(all_chunks)} chunks from PDF")
+        print(f"   - UC IPM guidelines for 6 crops")
         print("="*50 + "\n")
 
 
@@ -439,19 +439,19 @@ class DataIngester:
         response = self.client.get(url)
         if response.status_code == 200:
             info = response.json().get("result", {})
-            print("\n📊 Index Statistics:")
-            print(f"   • Name: {info.get('name')}")
-            print(f"   • Dimensions: {info.get('config', {}).get('dimensions')}")
-            print(f"   • Metric: {info.get('config', {}).get('metric')}")
+            print("\n[INFO] Index Statistics:")
+            print(f"   - Name: {info.get('name')}")
+            print(f"   - Dimensions: {info.get('config', {}).get('dimensions')}")
+            print(f"   - Metric: {info.get('config', {}).get('metric')}")
             # Vector count is often in a separate endpoint or part of the detail
             # Cloudflare API v2 for indexes often returns 'vectors_count' or similar
-            print(f"   • Vector Count: {info.get('vectors_count', 'Unknown')}")
-            print(f"   • Created On: {info.get('created_on')}")
+            print(f"   - Vector Count: {info.get('vectors_count', 'Unknown')}")
+            print(f"   - Created On: {info.get('created_on')}")
             
             # Explicitly check count if not in main info
             # We can't easily count without iterating, but the main info usually has it.
         else:
-            print(f"❌ Failed to get index stats: {response.text}")
+            print(f"[ERROR] Failed to get index stats: {response.text}")
 
     def process_path(self, path_str: str):
         """Process a single file or directory of PDFs."""
@@ -461,16 +461,16 @@ class DataIngester:
             if path.suffix.lower() == ".pdf":
                 self.run(str(path))
             else:
-                print(f"❌ Skipped non-PDF file: {path.name}")
+                print(f"[WARNING] Skipped non-PDF file: {path.name}")
         elif path.is_dir():
-            print(f"📂 Scanning directory: {path}")
+            print(f"[INFO] Scanning directory: {path}")
             pdf_files = list(path.glob("**/*.pdf"))
             print(f"   Found {len(pdf_files)} PDF files")
             
             for pdf_file in pdf_files:
                 self.run(str(pdf_file))
         else:
-            print(f"❌ Path not found: {path}")
+            print(f"[ERROR] Path not found: {path}")
 
 if __name__ == "__main__":
     # Default to scanning research directory

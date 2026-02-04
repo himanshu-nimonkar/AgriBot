@@ -20,7 +20,7 @@ VAPI_BASE_URL = "https://api.vapi.ai"
 VAPI_PRIVATE_KEY = os.getenv("VAPI_PRIVATE_KEY")
 
 if not VAPI_PRIVATE_KEY:
-    print("❌ Error: VAPI_PRIVATE_KEY not found in environment variables.")
+    print("[ERROR] VAPI_PRIVATE_KEY not found in environment variables.")
     sys.exit(1)
 
 HEADERS = {
@@ -33,7 +33,7 @@ def get_assistant_id(name_filter: str = "Ag Copilot") -> Optional[str]:
     try:
         resp = requests.get(f"{VAPI_BASE_URL}/assistant", headers=HEADERS)
         if resp.status_code != 200:
-            print(f"❌ Failed to list assistants: {resp.text}")
+            print(f"[ERROR] Failed to list assistants: {resp.text}")
             return None
             
         assistants = resp.json()
@@ -44,12 +44,12 @@ def get_assistant_id(name_filter: str = "Ag Copilot") -> Optional[str]:
         
         # Fallback: Return the first one if only one exists/was recently modified
         if assistants:
-            print(f"⚠️ Exact match for '{name_filter}' not found. Using most recent: {assistants[0].get('name')}")
+            print(f"[WARNING] Exact match for '{name_filter}' not found. Using most recent: {assistants[0].get('name')}")
             return assistants[0]["id"]
             
         return None
     except Exception as e:
-        print(f"❌ Error fetching assistant: {e}")
+        print(f"[ERROR] Error fetching assistant: {e}")
         return None
 
 def get_phone_number_id() -> Optional[str]:
@@ -57,7 +57,7 @@ def get_phone_number_id() -> Optional[str]:
     try:
         resp = requests.get(f"{VAPI_BASE_URL}/phone-number", headers=HEADERS)
         if resp.status_code != 200:
-            print(f"❌ Failed to list phone numbers: {resp.text}")
+            print(f"[ERROR] Failed to list phone numbers: {resp.text}")
             return None
             
         numbers = resp.json()
@@ -65,12 +65,12 @@ def get_phone_number_id() -> Optional[str]:
             return numbers[0]["id"]
         return None
     except Exception as e:
-        print(f"❌ Error fetching phone number: {e}")
+        print(f"[ERROR] Error fetching phone number: {e}")
         return None
 
 def update_vapi_config(url: str):
     """Updates Vapi Assistant and Phone Number with the new Tunnel URL."""
-    print(f"\n🔄 Updating Vapi Configuration with URL: {url}")
+    print(f"\n[INFO] Updating Vapi Configuration with URL: {url}")
     
     # 1. Clean URL (ensure https and remove trailing slash)
     if not url.startswith("https://"):
@@ -83,13 +83,13 @@ def update_vapi_config(url: str):
     # 2. Find IDs
     assistant_id = get_assistant_id()
     if not assistant_id:
-        print("❌ Could not find an Assistant ID.")
+        print("[ERROR] Could not find an Assistant ID.")
         return
         
     phone_id = get_phone_number_id()
     
     # 3. Update Assistant
-    print(f"   🔹 Updating Assistant ({assistant_id})...")
+    print(f"   [INFO] Updating Assistant ({assistant_id})...")
     payload = {
         "model": {
             "provider": "custom-llm",
@@ -129,13 +129,14 @@ def update_vapi_config(url: str):
     )
     
     if resp.status_code == 200:
-        print("   ✅ Assistant updated successfully.")
+        print("   [SUCCESS] Assistant updated successfully.")
     else:
-        print(f"   ❌ Failed to update Assistant: {resp.status_code} {resp.text}")
+        print(f"   [ERROR] Failed to update Assistant: {resp.status_code} {resp.text}")
 
     # 4. Update Phone Number (if exists)
     if phone_id:
-        print(f"   🔹 Updating Phone Number ({phone_id})...")
+        masked_id = f"{phone_id[:4]}...{phone_id[-4:]}" if len(phone_id) > 8 else "***"
+        print(f"   Updating Phone Number ({masked_id})...")
         phone_payload = {
             "serverUrl": webhook_url,
             "server": {
@@ -148,13 +149,13 @@ def update_vapi_config(url: str):
             json=phone_payload
         )
         if resp.status_code == 200:
-            print("   ✅ Phone Number updated successfully.")
+            print("   Phone Number updated successfully.")
         else:
-            print(f"   ❌ Failed to update Phone Number: {resp.status_code} {resp.text}")
+            print(f"   Failed to update Phone Number: {resp.status_code}")
     else:
-        print("   ⚠️ No phone number found to update.")
+        print("   No phone number found to update.")
 
-    print("\n✨ AgBot is ready! Call your Vapi number now.")
+    print("\n[SUCCESS] AgBot is ready! Call your Vapi number now.")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

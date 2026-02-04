@@ -183,7 +183,7 @@ I've analyzed the field data for {crop or 'your crop'}. Verification of satellit
 <div class="space-y-4">
     <div class="p-3 bg-emerald-900/20 border border-emerald-500/20 rounded-lg">
         <h3 class="text-emerald-400 font-bold mb-2 flex items-center gap-2">
-            🛰️ Field Analysis (Live Data)
+            Field Analysis (Live Data)
         </h3>
         
         <div class="grid grid-cols-1 gap-3 text-sm">

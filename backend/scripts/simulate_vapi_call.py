@@ -24,14 +24,14 @@ PAYLOAD = {
 }
 
 async def simulate_call():
-    print(f"📞 Simulating Vapi Call to {API_URL}...")
+    print(f"[INFO] Simulating Vapi Call to {API_URL}...")
     async with httpx.AsyncClient(timeout=30) as client:
         try:
             start = time.time()
             response = await client.post(API_URL, json=PAYLOAD)
             duration = time.time() - start
             
-            print(f"✅ Response received in {duration:.2f}s")
+            print(f"[SUCCESS] Response received in {duration:.2f}s")
             print(f"Status Code: {response.status_code}")
             
             data = response.json()
@@ -46,7 +46,7 @@ async def simulate_call():
             print(f"Approximate Sentence Count: {len(lines)}")
             
         except Exception as e:
-            print(f"❌ Error: {e}")
+            print(f"[ERROR] Error: {e}")
 
 if __name__ == "__main__":
     asyncio.run(simulate_call())

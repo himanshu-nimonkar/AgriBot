@@ -186,7 +186,8 @@ function LiveMap({ location, setLocation, satelliteData }) {
 
             {/* Satellite Stats Panel - Compact & Premium */}
             {/* Satellite Stats Panel - Always Visible with Skeleton Support */}
-            <div className="absolute top-3 right-3 z-[400] glass-card p-3 min-w-[170px] border-emerald-500/30 shadow-2xl backdrop-blur-xl scale-95 origin-top-right">
+            {/* Responsive: Compact on mobile/tablet, full on desktop */}
+            <div className="absolute top-3 right-3 z-[400] glass-card p-3 min-w-[170px] max-w-[180px] lg:min-w-[170px] border-emerald-500/30 shadow-2xl backdrop-blur-xl scale-90 md:scale-95 origin-top-right">
                 <div className="flex justify-between items-center mb-2">
                     <h3 className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest">Field Telemetry</h3>
                     <div className="flex items-center gap-1">
@@ -195,10 +196,10 @@ function LiveMap({ location, setLocation, satelliteData }) {
                     </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2 lg:space-y-3">
                     {!satelliteData ? (
                         /* Skeleton State */
-                        <div className="space-y-3 animate-pulse">
+                        <div className="space-y-2 lg:space-y-3 animate-pulse">
                             <div>
                                 <div className="flex justify-between items-end mb-1">
                                     <div className="h-2 w-8 bg-slate-700/50 rounded"></div>
@@ -220,7 +221,7 @@ function LiveMap({ location, setLocation, satelliteData }) {
                             <div>
                                 <div className="flex justify-between items-end mb-1">
                                     <span className="text-[10px] text-slate-400 font-medium">NDVI</span>
-                                    <span className="text-base font-bold text-white font-mono leading-none">
+                                    <span className="text-sm lg:text-base font-bold text-white font-mono leading-none">
                                         {satelliteData.ndvi_current?.toFixed(2) ?? '0.00'}
                                     </span>
                                 </div>
@@ -240,10 +241,10 @@ function LiveMap({ location, setLocation, satelliteData }) {
                             </div>
 
                             {/* Water Stress Section */}
-                            <div className="pt-2 border-t border-white/5">
+                            <div className="pt-1.5 lg:pt-2 border-t border-white/5">
                                 <div className="flex justify-between items-center">
                                     <span className="text-[10px] text-slate-400 font-medium">Water Stress</span>
-                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${(satelliteData.water_stress_level === 'Low' || !satelliteData.water_stress_level) ? 'bg-emerald-500/20 text-emerald-400' :
+                                    <span className={`text-[9px] lg:text-[10px] font-bold px-1.5 py-0.5 rounded-full ${(satelliteData.water_stress_level === 'Low' || !satelliteData.water_stress_level) ? 'bg-emerald-500/20 text-emerald-400' :
                                             satelliteData.water_stress_level === 'Moderate' ? 'bg-yellow-500/20 text-yellow-400' :
                                                 'bg-red-500/20 text-red-400'
                                         }`}>

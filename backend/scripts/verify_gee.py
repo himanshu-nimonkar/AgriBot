@@ -18,9 +18,9 @@ async def main():
     # Force Initialize
     gee_service.initialize()
     if gee_service._mock_mode:
-        print("❌ Service switched to MOCK MODE during init.")
+        print("[ERROR] Service switched to MOCK MODE during init.")
     else:
-        print("✅ Service initialized in REAL mode.")
+        print("[SUCCESS] Service initialized in REAL mode.")
 
     print("\nRunning Analytics Request...")
     try:
@@ -29,12 +29,12 @@ async def main():
         print(f"\nResult: {data}")
         
         if data.tile_url:
-            print(f"\n✅ Tile URL generated: {data.tile_url}")
+            print(f"\n[SUCCESS] Tile URL generated: {data.tile_url}")
         else:
-            print(f"\n⚠️ No Tile URL (Mock mode or error).")
+            print(f"\n[WARNING] No Tile URL (Mock mode or error).")
             
     except Exception as e:
-        print(f"\n❌ Error during analytics: {e}")
+        print(f"\n[ERROR] Error during analytics: {e}")
 
 if __name__ == "__main__":
     asyncio.run(main())

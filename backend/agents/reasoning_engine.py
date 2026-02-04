@@ -186,7 +186,7 @@ class ReasoningEngine:
         results = await asyncio.gather(*tasks, return_exceptions=True)
         weather_data = results[0] if not isinstance(results[0], Exception) else None
         if isinstance(results[1], Exception):
-            print(f"❌ GEE Task Failed: {results[1]}")
+            print(f"[ERROR] GEE Task Failed: {results[1]}")
             satellite_data = None
         else:
             satellite_data = results[1]

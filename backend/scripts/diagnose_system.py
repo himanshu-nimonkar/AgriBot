@@ -13,28 +13,28 @@ from services.weather import weather_service
 from config import settings
 
 async def run_diagnostics():
-    print(f"🔍 Starting System Diagnostics at {datetime.now().isoformat()}")
+    print(f"[INFO] Starting System Diagnostics at {datetime.now().isoformat()}")
     print("-" * 50)
     
     # 1. Config Check
-    print("\n1️⃣  CONFIGURATION CHECK")
-    print(f"CF Account ID: {'✅ Loaded' if settings.cloudflare_account_id else '❌ Missing'}")
-    print(f"CF API Token: {'✅ Loaded' if settings.cloudflare_api_token else '❌ Missing'}")
+    print("\n1. CONFIGURATION CHECK")
+    print(f"CF Account ID: {'[SUCCESS] Loaded' if settings.cloudflare_account_id else '[ERROR] Missing'}")
+    print(f"CF API Token: {'[SUCCESS] Loaded' if settings.cloudflare_api_token else '[ERROR] Missing'}")
     # Don't print actual keys for security, just presence
     
     # 2. RAG Check
-    print("\n2️⃣  RAG SERVICE CHECK")
+    print("\n2. RAG SERVICE CHECK")
     try:
         query = "tomato heat wave"
         print(f"Querying RAG for: '{query}'...")
         results = await rag_service.search_knowledge(query, "tomato")
         
         if results:
-            print(f"✅ RAG Success! Found {len(results)} results.")
+            print(f"[SUCCESS] RAG Success! Found {len(results)} results.")
             for i, r in enumerate(results[:2]):
                 print(f"   [{i+1}] {r.source}: {r.text[:100]}...")
         else:
-            print("⚠️ RAG returned NO results (Empty List).")
+            print("[WARNING] RAG returned NO results (Empty List).")
             # Verify local file presence manually
             import glob
             files = glob.glob("./data/**/*", recursive=True)
@@ -43,12 +43,12 @@ async def run_diagnostics():
                 print(f"   Files: {files}")
 
     except Exception as e:
-        print(f"❌ RAG Failed with Exception: {e}")
+        print(f"[ERROR] RAG Failed with Exception: {e}")
         import traceback
         traceback.print_exc()
 
     # 3. LLM Check
-    print("\n3️⃣  LLM SERVICE CHECK")
+    print("\n3. LLM SERVICE CHECK")
     try:
         print("Sending test prompt to Cloudflare Workers AI...")
         response = await llm_service.generate(
@@ -58,15 +58,15 @@ async def run_diagnostics():
         print(f"LLM Raw Output: '{response}'")
         
         if "System Functional" in response:
-            print("✅ LLM Connection Verified.")
+            print("[SUCCESS] LLM Connection Verified.")
         else:
-            print(f"⚠️ LLM Response unexpected: {response}")
+            print(f"[WARNING] LLM Response unexpected: {response}")
             
     except Exception as e:
-        print(f"❌ LLM Failed with Exception: {e}")
+        print(f"[ERROR] LLM Failed with Exception: {e}")
 
     # 4. Weather Check (Just in case)
-    print("\n4️⃣  WEATHER SERVICE CHECK")
+    print("\n4. WEATHER SERVICE CHECK")
     try:
         w = weather_service.get_weather(38.5, -121.7)
         # Mock weather is synchronous or async? Let's check service call.
@@ -76,11 +76,11 @@ async def run_diagnostics():
         # So it is awaitable.
         res = await w
         if res:
-             print(f"✅ Weather Data: {res.temperature_c}C")
+             print(f"[SUCCESS] Weather Data: {res.temperature_c}C")
         else:
-             print("⚠️ Weather returned None")
+             print("[WARNING] Weather returned None")
     except Exception as e:
-        print(f"❌ Weather Failed: {e}")
+        print(f"[ERROR] Weather Failed: {e}")
 
     await rag_service.close()
     await llm_service.close()

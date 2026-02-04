@@ -77,18 +77,18 @@ class GEEService:
                 )
                 ee.Initialize(credentials)
                 self._initialized = True
-                print("✓ Google Earth Engine initialized successfully")
+                print("[SUCCESS] Google Earth Engine initialized successfully")
             else:
                 # If no file is found, DO NOT try interactive auth (it hangs the server)
                 # Fallback to Mock Mode
-                print(f"⚠ GEE Key not found at: {service_account_file}")
-                print("⚠ Switching Geospatial Service to MOCK MODE.")
+                print(f"[WARNING] GEE Key not found at: {service_account_file}")
+                print("[WARNING] Switching Geospatial Service to MOCK MODE.")
                 self._mock_mode = True
                 self._initialized = True
             
         except Exception as e:
-            print(f"⚠ GEE initialization failed: {e}")
-            print("⚠ Switching Geospatial Service to MOCK MODE.")
+            print(f"[WARNING] GEE initialization failed: {e}")
+            print("[WARNING] Switching Geospatial Service to MOCK MODE.")
             self._mock_mode = True
             self._initialized = True
 

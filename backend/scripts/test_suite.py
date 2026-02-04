@@ -92,7 +92,7 @@ async def main():
     
     # 1. Health
     if not test_health():
-        print("\n❌ CRITICAL: Backend not running. Start it first.")
+        print("\n[ERROR] CRITICAL: Backend not running. Start it first.")
         return
 
     # 2. WebSocket
