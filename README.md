@@ -56,17 +56,29 @@ The system enables a **Real-Time Reasoning Loop** where voice/text input trigger
 
 ### Backend Infrastructure
 
-- **Python 3.12**: Selected for rich geospatial (GEE) and AI (LangChain) ecosystem.
+- **Python 3.12.9**: Selected for rich geospatial (GEE) and AI (LangChain) ecosystem.
 - **FastAPI**: High-concurrency async web framework.
 - **Uvicorn**: ASGI Server.
 - **Cloudflare Tunnel**: Exposes the local backend securely to the public internet (Vapi/Web).
 
 ### AI & Data
 
-- **Google Earth Engine (GEE)**: Server-side geospatial computation.
-- **ChromaDB**: Lightweight, local vector database for RAG.
-- **Vapi.ai**: Voice orchestration (integrating Deepgram STT and ElevenLabs TTS).
-- **Cloudflare Workers AI**: Low-latency inference for the core Reasoning Agent.
+- **Google Earth Engine (GEE)**: Server-side geospatial computation for satellite imagery.
+- **ChromaDB**: Lightweight, local vector database for RAG (Retrieval-Augmented Generation).
+- **Vapi.ai**: Voice orchestration platform integrating:
+  - **Deepgram Nova-2**: Speech-to-text transcription
+  - **ElevenLabs**: High-quality text-to-speech synthesis
+- **Cloudflare Workers AI**: Low-latency inference using Llama 3.1 8B Instruct Fast model.
+- **Sentence Transformers**: `all-MiniLM-L6-v2` for document embeddings (384 dimensions).
+
+### Additional Dependencies
+
+- **Redis** (Optional): For rate limiting and distributed session storage.
+- **Celery** (Optional): For background task processing.
+- **FastAPI-Limiter**: Rate limiting middleware (works with or without Redis).
+- **LangChain**: Agent orchestration and prompt management.
+- **PDFPlumber & PyPDF**: PDF parsing for research document ingestion.
+- **Pandas & NumPy**: Data processing for weather and market analysis.
 
 ---
 
@@ -109,12 +121,19 @@ The backend is structured around **Service Modules** (`services/`) invoked by a 
 
 ### Telephony Flow
 
-- **Inbound**: User calls `+1 (530) ...`.
+- **Inbound**: User calls the configured Vapi phone number.
 - **Handshake**: Vapi hits `/webhook/vapi`. Backend returns the Assistant Config (System Prompt, Voice ID).
+- **Assistant Configuration**:
+  - **Name**: "Yolo Ag Copilot"
+  - **ID**: `e7f5bb75-932b-43bb-b728-ddeb9c13b54a`
+  - **Voice**: ElevenLabs (`21m00Tcm4TlvDq8ikWAM`)
+  - **Transcriber**: Deepgram Nova-2 (en-US)
+  - **Model**: Custom LLM via Cloudflare Workers AI
 - **Turn-Taking**:
-  - User speaks -> Vapi (Deepgram) transcribes.
-  - Backend receives transcript -> Generates Stream.
-  - **Interruption Handling**: Configured to `interruptionsEnabled: false`. The system ignores barge-in attempts while delivering critical advice (Satellite Analysis results) to ensure the logic isn't cut off.
+  - User speaks → Vapi (Deepgram) transcribes.
+  - Backend receives transcript → Generates Stream.
+  - **Timeout**: 30 seconds of silence ends the call.
+  - **Response Delay**: 0.5 seconds to allow natural speech pacing.
 
 ---
 
@@ -163,21 +182,69 @@ The backend is structured around **Service Modules** (`services/`) invoked by a 
 Create `.env` in the root (validated by startup script):
 
 ```ini
-# Core
-OPENAI_API_KEY=sk-...           # (Optional) High-accuracy fallback
-VAPI_PRIVATE_KEY=...            # Required for Voice
-CLOUDFLARE_API_TOKEN=...        # Required for LLM
+# Cloudflare Workers AI (Required)
+CLOUDFLARE_ACCOUNT_ID=...       # Your Cloudflare Account ID
+CLOUDFLARE_API_TOKEN=...        # API token with Workers AI and Vectorize permissions
 
-# Geospatial
-GEE_SERVICE_ACCOUNT_FILE=...    # Path to Google Cloud JSON credentials
+# Vapi.ai Voice Integration (Required for Phone Calls)
+VAPI_PRIVATE_KEY=...            # Private key for backend authentication
+VAPI_PUBLIC_KEY=...             # Public key for client-side SDK (if used)
 
-# Infrastructure
-VITE_API_URL=http://127.0.0.1:8000
+# Google Earth Engine (Required for Satellite Data)
+GEE_SERVICE_ACCOUNT_FILE=...    # Absolute path to GCP service account JSON file
+
+# Frontend Configuration
+VITE_API_URL=http://127.0.0.1:8000  # Backend URL (local dev or tunnel URL)
+
+# Optional: Redis for Rate Limiting and Session Storage
+REDIS_URL=                      # Leave empty to use in-memory fallback
+                                # Example: redis://localhost:6379/0
 ```
+
+### Environment Variable Details:
+
+- **CLOUDFLARE_ACCOUNT_ID**: Found in Cloudflare Dashboard → Workers & Pages → Overview
+- **CLOUDFLARE_API_TOKEN**: Create at Cloudflare Dashboard → My Profile → API Tokens
+  - Required permissions: Account.Workers AI:Read, Account.Vectorize:Edit
+- **VAPI_PRIVATE_KEY**: From Vapi.ai Dashboard → API Keys → Private Key
+- **VAPI_PUBLIC_KEY**: From Vapi.ai Dashboard → API Keys → Public Key
+- **GEE_SERVICE_ACCOUNT_FILE**: Download from Google Cloud Console → IAM → Service Accounts
+  - Requires Earth Engine API enabled
+  - Service account needs `roles/earthengine.viewer` permission
+- **VITE_API_URL**: During development, use `http://127.0.0.1:8000`. For production, use your Cloudflare Tunnel URL or deployed backend URL.
+- **REDIS_URL**: Optional. System uses in-memory storage if not provided. Useful for production deployments with multiple backend instances.
 
 ---
 
 ## 11. Local Development Setup
+
+### System Requirements
+
+- **Operating System**: macOS, Linux, or Windows (with WSL2)
+- **Python**: 3.12.9 or higher
+- **Node.js**: 18.x or higher
+- **Memory**: Minimum 8GB RAM (16GB recommended for satellite processing)
+- **Disk Space**: ~2GB for dependencies and research documents
+- **Internet**: Required for GEE, Cloudflare, and Vapi APIs
+
+### Required Accounts & API Access
+
+1. **Cloudflare Account** (Free tier available):
+   - Workers AI enabled
+   - Vectorize index created (name: `agribot-knowledge`)
+   - API token generated
+
+2. **Vapi.ai Account** (Paid service ~$0.10/min):
+   - Phone number configured
+   - API keys generated
+   - Assistant created (or use provided configuration)
+
+3. **Google Cloud Platform** (Free tier for Earth Engine):
+   - Earth Engine API enabled
+   - Service account created
+   - Credentials JSON downloaded
+
+### Unified Startup
 
 We provide a **unified startup script** that handles dependencies (pip/npm), tunnels, and process orchestration.
 
@@ -264,4 +331,108 @@ The system is designed to degrade gracefully:
 
 ---
 
-_Verified by Engineering Team - 2026_
+## 18. Troubleshooting Common Issues
+
+### Backend Won't Start
+
+**Issue**: `ModuleNotFoundError` or missing dependencies
+```bash
+# Solution: Reinstall dependencies
+cd backend
+source ../venv/bin/activate
+pip install -r requirements.txt
+```
+
+**Issue**: `earthengine.ee.EEException: Invalid credential`
+```bash
+# Solution: Check GEE_SERVICE_ACCOUNT_FILE path and re-authenticate
+python backend/scripts/verify_gee.py
+```
+
+### Frontend Build Fails
+
+**Issue**: `npm ERR! peer dependency` warnings
+```bash
+# Solution: Clean install
+cd frontend
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Voice Calls Not Working
+
+**Issue**: Vapi can't reach backend
+- Ensure Cloudflare tunnel is running
+- Check `serverUrl` in Vapi assistant configuration matches tunnel URL
+- Verify VAPI_PRIVATE_KEY is correct
+
+**Issue**: "Assistant not found" error
+- Check assistant ID matches `e7f5bb75-932b-43bb-b728-ddeb9c13b54a`
+- Run `python backend/scripts/update_vapi.py` to sync configuration
+
+### Satellite Data Not Loading
+
+**Issue**: Map shows "Loading..." indefinitely
+- Check GEE service account has Earth Engine API enabled
+- Verify coordinates are within Yolo County bounds (38.5-39.0 lat, -122.0 to -121.5 lon)
+- Check browser console for CORS errors
+
+### Port Conflicts
+
+**Issue**: `Address already in use: 8000` or `5173`
+```bash
+# Solution: Kill existing processes
+pkill -f "uvicorn|vite|cloudflared"
+sleep 2
+./start_agribot.sh
+```
+
+### Redis Connection Errors
+
+**Issue**: Rate limiting disabled warnings
+- This is normal if REDIS_URL is empty
+- System automatically falls back to in-memory rate limiting
+- For production, install Redis: `brew install redis` (macOS) or use Redis Cloud
+
+---
+
+## 19. Performance Optimization
+
+### Caching Strategies
+
+1. **Satellite Tiles**: Cached for 24 hours (configured in GEE service)
+2. **Weather Data**: Cached for 1 hour (OpenMeteo updates hourly)
+3. **RAG Embeddings**: Persistent in ChromaDB (no re-computation unless documents change)
+
+### Latency Optimization
+
+- **Parallel Execution**: GEE, Weather, and RAG queries run concurrently (saves ~8-12s per request)
+- **Streaming Responses**: LLM streams tokens to reduce perceived latency
+- **Filler Phrases**: "Analyzing satellite data..." masks processing time during voice calls
+
+### Cost Optimization
+
+- **Cloudflare Workers AI**: Free tier includes 10,000 neurons/day (roughly 5,000-10,000 queries)
+- **GEE**: Free for non-commercial research (up to 50,000 requests/day)
+- **Vapi**: ~$0.10/min (optimize by reducing silence timeout from 30s to 20s)
+
+---
+
+## 20. Production Deployment Checklist
+
+- [ ] Set `REDIS_URL` to production Redis instance
+- [ ] Configure CORS allowed origins in `backend/main.py`
+- [ ] Set `VITE_API_URL` to production backend URL
+- [ ] Enable rate limiting (Redis required)
+- [ ] Set up SSL/TLS certificates (Cloudflare handles this automatically)
+- [ ] Configure monitoring and logging (use Cloudflare Analytics)
+- [ ] Set up backup for ChromaDB vector store
+- [ ] Test with multiple concurrent users
+- [ ] Update Vapi assistant `serverUrl` to production URL
+- [ ] Enable HTTPS-only in production
+
+---
+
+_Verified by Engineering Team - February 2026_  
+_System Version: 1.2.0_  
+_Last Updated: February 3, 2026_
