@@ -1,4 +1,4 @@
-# 🚜 AgriBot: Deep-Ag Copilot
+# AgriBot: Deep-Ag Copilot
 
 **AgriBot** is a cutting-edge, voice-activated agricultural assistant that combines **Real-Time Satellite Data (Google Earth Engine)**, **Conversational AI (LLM)**, and **Hyper-Local Weather** to provide PhD-level agronomic advice to farmers.
 
@@ -8,15 +8,15 @@
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
-### 1. 🗣️ Real-Time Voice Intelligence
+### 1. Real-Time Voice Intelligence
 
 - **Powered by Vapi.ai**: Talk to your farm data like you talk to a human.
 - **Latency-Optimized**: Uses Cloudflare Tunnels for ultra-low latency voice responses.
 - **Context-Aware**: Remembers previous questions in the conversation (e.g., "What about water?" knows you're talking about the previously mentioned crop).
 
-### 2. 🛰️ Satellite-Powered Analytics (Google Earth Engine)
+### 2. Satellite-Powered Analytics (Google Earth Engine)
 
 - **Live Imagery**: Pulls real-time Sentinel-2 satellite data.
 - **Key Metrics**:
@@ -25,7 +25,7 @@
 - **Interactive Map**: Displays dynamic NDVI overlays directly on the field map.
 - **Geospatial Precision**: Analyze specific fields by address (e.g., "123 Farm Lane").
 
-### 3. 🧠 Advanced Reasoning Engine
+### 3. Advanced Reasoning Engine
 
 - **RAG Methodology**: Retrieves relevant agricultural research papers.
 - **Multi-Factor Analysis**: Combines weather forecasts, soil data, and historical trends.
@@ -34,7 +34,7 @@
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Prerequisites
 
@@ -109,7 +109,7 @@ For a production-grade setup with Redis and Celery:
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TD
@@ -131,7 +131,7 @@ graph TD
 
 ---
 
-## 🌍 Google Earth Engine (GEE) Integration
+## Google Earth Engine (GEE) Integration
 
 AgriBot uses GEE to fetch ground-truth data.
 
@@ -144,7 +144,7 @@ AgriBot uses GEE to fetch ground-truth data.
 
 ---
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 **1. "Offline" Status on Dashboard?**
 
@@ -154,7 +154,7 @@ AgriBot uses GEE to fetch ground-truth data.
 **2. Vapi Call Drops?**
 
 - The Tunnel URL changes on every restart. Always use the start script to auto-update Vapi.
-- Check the script output for "✅ Vapi Configured".
+- Check the script output for "Vapi Configured".
 
 **3. "Invalid Date" or Map Errors?**
 
@@ -164,6 +164,6 @@ AgriBot uses GEE to fetch ground-truth data.
 
 ---
 
-## 📜 License
+## License
 
 MIT License. Built for the Future of Agriculture.

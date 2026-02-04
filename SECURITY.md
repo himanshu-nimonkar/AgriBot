@@ -12,10 +12,10 @@ We actively maintain security updates for the following versions:
 
 | Version | Supported          | End of Support |
 | ------- | ------------------ | -------------- |
-| 1.2.x   | ✅ Yes             | TBD            |
-| 1.1.x   | ⚠️ Critical fixes only | Jun 2026  |
-| 1.0.x   | ❌ No              | Dec 2025       |
-| < 1.0   | ❌ No              | -              |
+| 1.2.x   | Yes                | TBD            |
+| 1.1.x   | Critical fixes only| Jun 2026       |
+| 1.0.x   | No                 | Dec 2025       |
+| < 1.0   | No                 | -              |
 
 **Note**: We recommend always using the latest 1.2.x release for production deployments.
 
@@ -125,11 +125,11 @@ Please provide the following information:
 ### Environment Configuration
 
 ```bash
-# ❌ NEVER commit these files
+# NEVER commit these files
 .env
 backend/config/indigo-splice-485617-j0-873f46d5b26f.json  # GEE credentials
 
-# ✅ Use environment variables or secret managers
+# Use environment variables or secret managers
 export CLOUDFLARE_API_TOKEN="secure_token"
 export VAPI_PRIVATE_KEY="secure_key"
 export GEE_SERVICE_ACCOUNT_FILE="/secure/path/to/credentials.json"

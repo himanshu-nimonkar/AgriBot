@@ -11,35 +11,35 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 cleanup() {
-    echo -e "\n${RED}🛑 Shutting down AgriBot System...${NC}"
+    echo -e "\n${RED}Shutting down AgriBot System...${NC}"
     kill $(jobs -p) 2>/dev/null
     exit
 }
 trap cleanup SIGINT SIGTERM
 
-echo -e "${GREEN}🌱 AgriBot System Initialization${NC}"
+echo -e "${GREEN}AgriBot System Initialization${NC}"
 echo "=================================="
 
 # 0. Prerequisite Checks
-echo -e "${BLUE}🔍 Checking Prerequisites...${NC}"
+echo -e "${BLUE}Checking Prerequisites...${NC}"
 
 if [ ! -f ".env" ]; then
-    echo -e "${RED}❌ .env file not found!${NC}"
+    echo -e "${RED}.env file not found!${NC}"
     echo "   Please create a .env file with OPENAI_API_KEY, VAPI_PRIVATE_KEY, etc."
     exit 1
 fi
 
 if [ ! -f "cloudflared" ]; then
-    echo -e "${YELLOW}⚠️  cloudflared binary not found.${NC}"
+    echo -e "${YELLOW}WARNING: cloudflared binary not found.${NC}"
     echo "   Downloading cloudflared for macOS (Darwin-amd64)..."
     # Auto-download for convenience (assuming Mac as per User metadata)
     curl -L --output cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-darwin-amd64
     chmod +x cloudflared
-    echo -e "${GREEN}✅ Downloaded cloudflared.${NC}"
+    echo -e "${GREEN}Downloaded cloudflared.${NC}"
 fi
 
 # 1. Backend Setup & Start
-echo -e "${BLUE}🐍 Setting up Backend...${NC}"
+echo -e "${BLUE}Setting up Backend...${NC}"
 
 if [ ! -d "venv" ]; then
     echo "   Creating Python virtual environment..."
@@ -54,7 +54,7 @@ fi
 # Double check dependencies if venv existed but might be stale
 # (Skipping strictly for speed, but ideally we check)
 
-echo -e "${BLUE}🚀 Starting FastAPI Backend (Port 8000)...${NC}"
+echo -e "${BLUE}Starting FastAPI Backend (Port 8000)...${NC}"
 export PYTHONPATH=$PYTHONPATH:$(pwd)/backend
 # Disable Redis for local/dev mode to avoid needing Docker 
 export REDIS_URL="" 
@@ -68,7 +68,7 @@ echo "   Waiting for backend to heat up..."
 sleep 3
 
 # 2. Start Cloudflare Tunnel
-echo -e "${BLUE}🌐 Starting Cloudflare Tunnel...${NC}"
+echo -e "${BLUE}Starting Cloudflare Tunnel...${NC}"
 # Delete old log to ensure fresh token grep
 rm -f tunnel.log
 ./cloudflared tunnel --url http://localhost:8000 > tunnel.log 2>&1 &
@@ -93,25 +93,25 @@ while [ -z "$SERVER_URL" ]; do
     COUNT=$((COUNT+1))
     
     if [ $COUNT -ge $MAX_RETRIES ]; then
-        echo -e "\n${RED}❌ Timeout waiting for Tunnel URL.${NC}"
+        echo -e "\n${RED}ERROR: Timeout waiting for Tunnel URL.${NC}"
         cat tunnel.log
         kill $BACKEND_PID $TUNNEL_PID
         exit 1
     fi
 done
 
-echo -e "\n${GREEN}✅ Tunnel Online: $SERVER_URL${NC}"
+echo -e "\n${GREEN}Tunnel Online: $SERVER_URL${NC}"
 
 # 3. Update Vapi Configuration
-echo -e "${BLUE}🔄 Syncing Configuration with Vapi.ai...${NC}"
+echo -e "${BLUE}Syncing Configuration with Vapi.ai...${NC}"
 python backend/scripts/update_vapi.py "$SERVER_URL"
 if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Vapi Sync Failed. Checking logs...${NC}"
+    echo -e "${RED}ERROR: Vapi Sync Failed. Checking logs...${NC}"
     # proceed anyway but warn
 fi
 
 # 4. Frontend Setup & Start
-echo -e "${BLUE}🎨 Setting up Frontend...${NC}"
+echo -e "${BLUE}Setting up Frontend...${NC}"
 cd frontend
 
 if [ ! -d "node_modules" ]; then
@@ -119,18 +119,18 @@ if [ ! -d "node_modules" ]; then
     npm ci --silent
 fi
 
-echo -e "🚀 Starting Vite Frontend..."
+echo -e "Starting Vite Frontend..."
 # We pass the API URL to the frontend environment/logs, though App.jsx uses query param primarily
 nohup npm run dev -- --host > ../frontend.log 2>&1 &
 FRONTEND_PID=$!
 cd ..
 
-echo -e "\n${GREEN}🎉 SYSTEM FULLY OPERATIONAL!${NC}"
-echo "=================================="
-echo -e "   🏠 Local Frontend:   http://localhost:5173/?api_url=$SERVER_URL"
-echo -e "   ☁️  Public Dashboard: https://agribot-dashboard.pages.dev/?api_url=$SERVER_URL"
-echo -e "   🔙 Backend Public:   $SERVER_URL"
-echo -e "   📄 Documentation:    http://localhost:8000/docs"
+echo -e "\n${GREEN}SYSTEM FULLY OPERATIONAL!${NC}"
+echo -e "${GREEN}================================${NC}"
+echo -e "   Local Frontend:   http://localhost:5173/?api_url=$SERVER_URL"
+echo -e "   Public Dashboard: https://agribot-dashboard.pages.dev/?api_url=$SERVER_URL"
+echo -e "   Backend Public:   $SERVER_URL"
+echo -e "   Documentation:    http://localhost:8000/docs"
 echo "=================================="
 echo -e "   (Logs: backend.log, tunnel.log, frontend.log)"
 echo -e "   Press CTRL+C to stop all services."
