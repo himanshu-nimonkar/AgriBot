@@ -135,8 +135,8 @@ def update_vapi_config(url: str):
 
     # 4. Update Phone Number (if exists)
     if phone_id:
-        masked_id = f"{phone_id[:4]}...{phone_id[-4:]}" if len(phone_id) > 8 else "***"
-        print(f"   Updating Phone Number ({masked_id})...")
+        # Note: phone_id is sensitive and should not be logged
+        print(f"   Updating Phone Number configuration...")
         phone_payload = {
             "serverUrl": webhook_url,
             "server": {
