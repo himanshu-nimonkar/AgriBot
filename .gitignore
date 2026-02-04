@@ -1,4 +1,7 @@
 .env
+.env.*
+.env copy
+*.env
 __pycache__/
 *.pyc
 .venv/
