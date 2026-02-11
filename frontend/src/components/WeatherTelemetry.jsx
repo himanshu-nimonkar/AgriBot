@@ -51,8 +51,12 @@ function WeatherTelemetry({ data }) {
         date: day.date ? day.date.split('-').slice(1).join('/') : '',
         high: day.temp_max,
         low: day.temp_min,
-        precip: day.precipitation
+        precip: day.precipitation_sum || 0
     })) || []
+
+    // Calculate total precipitation for the week
+    const totalPrecip = forecastData.reduce((sum, day) => sum + (day.precip || 0), 0).toFixed(1)
+    const rainyDays = forecastData.filter(day => day.precip > 0).length
 
     return (
         <div className="glass-card p-6 border-emerald-500/20">
@@ -114,8 +118,14 @@ function WeatherTelemetry({ data }) {
             {/* Forecast Chart */}
             {forecastData.length > 0 && (
                 <div>
-                    <h3 className="text-xs font-medium text-slate-500 uppercase tracking-widest mb-3">7-Day Forecast</h3>
-                    <div className="h-32">
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-xs font-medium text-slate-500 uppercase tracking-widest">7-Day Forecast</h3>
+                        <div className="flex gap-4 text-xs">
+                            <span className="text-blue-400">💧 {totalPrecip}mm total</span>
+                            <span className="text-slate-400">{rainyDays} rainy day{rainyDays !== 1 ? 's' : ''}</span>
+                        </div>
+                    </div>
+                    <div className="h-32 mb-4">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={forecastData}>
                                 <defs>
@@ -150,6 +160,40 @@ function WeatherTelemetry({ data }) {
                                     fill="transparent"
                                     strokeWidth={2}
                                     strokeDasharray="5 5"
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                    
+                    {/* Precipitation Bar Chart */}
+                    <div className="h-24">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={forecastData}>
+                                <defs>
+                                    <linearGradient id="colorPrecip" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.5} />
+                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+                                <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} unit="mm" axisLine={false} tickLine={false} />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: '#0f172a',
+                                        border: '1px solid #1e293b',
+                                        borderRadius: '8px',
+                                        fontSize: '12px'
+                                    }}
+                                    itemStyle={{ color: '#e2e8f0' }}
+                                    formatter={(value) => [`${value} mm`, 'Precipitation']}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="precip"
+                                    stroke="#3b82f6"
+                                    fill="url(#colorPrecip)"
+                                    strokeWidth={2}
                                 />
                             </AreaChart>
                         </ResponsiveContainer>

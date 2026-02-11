@@ -281,7 +281,28 @@ class ReasoningEngine:
 
     def _format_weather(self, w: WeatherData) -> str:
         if not w: return "Weather unavailable."
-        return f"Temp: {w.temperature_c}C, Hum: {w.relative_humidity}%, Wind: {w.wind_speed_kmh}kmh, Soil(0-7cm): {w.soil_moisture_0_7cm}, Soil(28-100cm): {w.soil_moisture_28_100cm}, ETo: {w.reference_evapotranspiration}mm, SprayRisk: {w.spray_drift_risk}"
+        
+        base_info = f"Temp: {w.temperature_c}C, Hum: {w.relative_humidity}%, Wind: {w.wind_speed_kmh}kmh, Current Precip: {w.precipitation_mm}mm, Soil(0-7cm): {w.soil_moisture_0_7cm}, Soil(28-100cm): {w.soil_moisture_28_100cm}, ETo: {w.reference_evapotranspiration}mm, SprayRisk: {w.spray_drift_risk}"
+        
+        # Add 7-day precipitation forecast
+        if w.forecast and len(w.forecast) > 0:
+            precip_forecast = []
+            total_precip = 0
+            rainy_days = 0
+            for day in w.forecast:
+                precip = day.precipitation_sum or 0
+                total_precip += precip
+                if precip > 0:
+                    rainy_days += 1
+                    precip_forecast.append(f"{day.date}: {precip}mm")
+            
+            forecast_summary = f" | 7-Day Forecast: {total_precip:.1f}mm total, {rainy_days} rainy days"
+            if precip_forecast:
+                forecast_summary += f" ({', '.join(precip_forecast[:3])})"  # Show first 3 rainy days
+            
+            return base_info + forecast_summary
+        
+        return base_info
 
     def _format_satellite(self, s: FieldAnalytics) -> str:
         if not s: return "Satellite unavailable."
