@@ -75,11 +75,12 @@ function ConversationStream({ messages, isThinking }) {
 
                             {/* Feedback buttons for assistant messages */}
                             {message.role === 'assistant' && (
-                                <div className="flex items-center gap-2 mt-2">
+                                <div className="flex items-center gap-3 mt-3 pt-2 border-t border-white/10">
+                                    <span className="text-[10px] text-gray-500">Was this helpful?</span>
                                     <button
                                         onClick={() => handleFeedback(index, 'up')}
-                                        className={`p-1 rounded hover:bg-white/10 transition-colors ${
-                                            feedback[index] === 'up' ? 'text-green-400' : 'text-gray-500'
+                                        className={`p-1.5 rounded-lg hover:bg-white/10 transition-all ${
+                                            feedback[index] === 'up' ? 'text-green-400 bg-green-400/10' : 'text-gray-400 hover:text-green-400'
                                         }`}
                                         title="Helpful"
                                     >
@@ -89,8 +90,8 @@ function ConversationStream({ messages, isThinking }) {
                                     </button>
                                     <button
                                         onClick={() => handleFeedback(index, 'down')}
-                                        className={`p-1 rounded hover:bg-white/10 transition-colors ${
-                                            feedback[index] === 'down' ? 'text-red-400' : 'text-gray-500'
+                                        className={`p-1.5 rounded-lg hover:bg-white/10 transition-all ${
+                                            feedback[index] === 'down' ? 'text-red-400 bg-red-400/10' : 'text-gray-400 hover:text-red-400'
                                         }`}
                                         title="Not helpful"
                                     >
