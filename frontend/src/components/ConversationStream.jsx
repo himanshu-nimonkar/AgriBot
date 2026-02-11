@@ -54,58 +54,59 @@ function ConversationStream({ messages, isThinking }) {
                         key={index}
                         className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
                     >
-                        <div
-                            className={`max-w-[85%] rounded-2xl px-4 py-3 ${message.role === 'user'
-                                    ? 'bg-agri-600 text-white'
-                                    : 'bg-gray-700/50 text-gray-100'
-                                }`}
-                        >
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                                {message.content}
-                            </p>
+                        <div className="w-full max-w-[85%]">
+                            <div
+                                className={`rounded-2xl px-4 py-3 ${message.role === 'user'
+                                        ? 'bg-agri-600 text-white'
+                                        : 'bg-gray-700/50 text-gray-100'
+                                    }`}
+                            >
+                                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                                    {message.content}
+                                </p>
 
-                            {/* Show sources if available */}
-                            {message.sources && message.sources.length > 0 && (
-                                <div className="mt-2 pt-2 border-t border-white/20">
-                                    <p className="text-[10px] text-gray-300">
-                                        📚 Sources: {message.sources.join(', ')}
-                                    </p>
-                                </div>
-                            )}
+                                {/* Show sources if available */}
+                                {message.sources && message.sources.length > 0 && (
+                                    <div className="mt-2 pt-2 border-t border-white/20">
+                                        <p className="text-[10px] text-gray-300">
+                                            📚 Sources: {message.sources.join(', ')}
+                                        </p>
+                                    </div>
+                                )}
 
-                            {/* Feedback buttons for assistant messages */}
+                                <p className={`text-[10px] mt-2 ${message.role === 'user' ? 'text-agri-200' : 'text-gray-500'
+                                    }`}>
+                                    {formatTime(message.timestamp)}
+                                </p>
+                            </div>
+
+                            {/* Feedback buttons for assistant messages - OUTSIDE the message box like ChatGPT */}
                             {message.role === 'assistant' && (
-                                <div className="flex items-center gap-3 mt-3 pt-2 border-t border-white/10">
-                                    <span className="text-[10px] text-gray-500">Was this helpful?</span>
+                                <div className="flex items-center gap-2 mt-2 ml-1">
                                     <button
                                         onClick={() => handleFeedback(index, 'up')}
-                                        className={`p-1.5 rounded-lg hover:bg-white/10 transition-all ${
-                                            feedback[index] === 'up' ? 'text-green-400 bg-green-400/10' : 'text-gray-400 hover:text-green-400'
+                                        className={`p-1.5 rounded hover:bg-gray-700 transition-colors ${
+                                            feedback[index] === 'up' ? 'text-green-500' : 'text-gray-400 hover:text-gray-200'
                                         }`}
-                                        title="Helpful"
+                                        title="Good response"
                                     >
-                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
                                         </svg>
                                     </button>
                                     <button
                                         onClick={() => handleFeedback(index, 'down')}
-                                        className={`p-1.5 rounded-lg hover:bg-white/10 transition-all ${
-                                            feedback[index] === 'down' ? 'text-red-400 bg-red-400/10' : 'text-gray-400 hover:text-red-400'
+                                        className={`p-1.5 rounded hover:bg-gray-700 transition-colors ${
+                                            feedback[index] === 'down' ? 'text-red-500' : 'text-gray-400 hover:text-gray-200'
                                         }`}
-                                        title="Not helpful"
+                                        title="Bad response"
                                     >
-                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.105-1.79l-.05-.025A4 4 0 0011.055 2H5.64a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 001-1v-.667a4 4 0 01.8-2.4l1.4-1.866a4 4 0 00.8-2.4z" />
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
                                         </svg>
                                     </button>
                                 </div>
                             )}
-
-                            <p className={`text-[10px] mt-1 ${message.role === 'user' ? 'text-agri-200' : 'text-gray-500'
-                                }`}>
-                                {formatTime(message.timestamp)}
-                            </p>
                         </div>
                     </div>
                 ))}

@@ -9,7 +9,6 @@ import LiveMap from './components/LiveMap'
 import ErrorBoundary from './components/ErrorBoundary'
 import WeatherTelemetry from './components/WeatherTelemetry'
 import WhyBox from './components/WhyBox'
-import ConversationStream from './components/ConversationStream'
 import { motion, AnimatePresence } from 'framer-motion'
 import DOMPurify from 'dompurify'
 import Navbar from './components/Navbar'
@@ -458,8 +457,39 @@ function App() {
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-hidden">
-                            <ConversationStream messages={messages} isThinking={isThinking} />
+                        <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar bg-slate-900/20">
+                            {messages.length === 0 && (
+                                <div className="flex flex-col items-center justify-center h-full text-center text-slate-500">
+                                    <p className="font-medium text-slate-300 text-sm">Ask AgriBot</p>
+                                    <p className="text-[10px] mt-1 text-slate-500">Weather, Pests, Market...</p>
+                                </div>
+                            )}
+                            <AnimatePresence mode="popLayout">
+                                {messages.map((msg, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ opacity: 0, y: 5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                                    >
+                                        <div
+                                            className={`max-w-[90%] rounded-xl px-3 py-2 text-sm leading-relaxed shadow-sm ${msg.role === 'user'
+                                                ? 'bg-emerald-600/20 border border-emerald-500/20 text-emerald-50'
+                                                : 'bg-[#1A1A1A]/90 border border-white/10 text-slate-200'
+                                                }`}
+                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(msg.content) }}
+                                        />
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                            {isThinking && (
+                                <div className="flex items-center gap-1 pl-2">
+                                    <div className="typing-dot w-1 h-1"></div>
+                                    <div className="typing-dot w-1 h-1"></div>
+                                    <div className="typing-dot w-1 h-1"></div>
+                                </div>
+                            )}
+                            <div ref={chatEndRef} />
                         </div>
 
                         {/* Input */}
@@ -567,8 +597,57 @@ function App() {
                             </div>
 
                             {/* Messages List - Premium */}
-                            <div className="flex-1 overflow-hidden">
-                                <ConversationStream messages={messages} isThinking={isThinking} />
+                            <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar bg-slate-900/20">
+                                {messages.length === 0 && (
+                                    <div className="flex flex-col items-center justify-center h-full text-center text-slate-500 space-y-4">
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 flex items-center justify-center border border-white/5 overflow-hidden p-2">
+                                            <img src="/AgriBot.png" alt="AgriBot" className="w-full h-full object-contain" />
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-slate-300">Agri-Brain Ready</p>
+                                            <p className="text-xs mt-1 text-slate-500 max-w-[200px] mx-auto">Ask about weather, pests, or market prices in Yolo County.</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <AnimatePresence mode="popLayout">
+                                    {messages.map((msg, i) => (
+                                        <motion.div
+                                            key={i}
+                                            variants={messageVariants}
+                                            initial="hidden"
+                                            animate="visible"
+                                            layout
+                                            className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                                        >
+                                            <div
+                                                className={`max-w-[85%] rounded-2xl px-5 py-3.5 text-[0.92rem] leading-relaxed shadow-lg backdrop-blur-sm prose prose-invert prose-p:my-1 prose-headings:my-2 prose-strong:text-emerald-400 prose-ul:my-1 prose-li:my-0 ${msg.role === 'user'
+                                                    ? 'bg-emerald-600/20 border border-emerald-500/20 text-emerald-50'
+                                                    : 'bg-[#1A1A1A]/90 border border-white/10 text-slate-200'
+                                                    }`}
+                                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parse(msg.content)) }}
+                                            />
+                                            <span className="text-[10px] text-slate-500/60 mt-1.5 px-1 font-mono uppercase tracking-wide">
+                                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </motion.div>
+                                    ))}
+                                </AnimatePresence>
+
+                                {isThinking && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="flex items-start pl-2"
+                                    >
+                                        <div className="bg-[#1A1A1A]/80 rounded-2xl rounded-bl-none px-4 py-4 border border-white/5 flex gap-1 items-center">
+                                            <div className="typing-dot"></div>
+                                            <div className="typing-dot"></div>
+                                            <div className="typing-dot"></div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                                <div ref={chatEndRef} />
                             </div>
 
                             {/* Input Area */}
