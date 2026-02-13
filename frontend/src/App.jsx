@@ -24,7 +24,7 @@ import throttle from 'lodash.throttle'
 const getApiBaseUrl = () => {
     const params = new URLSearchParams(window.location.search);
     const override = params.get('api_url');
-    
+
     if (override) {
         try {
             const parsed = new URL(override, window.location.origin);
@@ -38,7 +38,7 @@ const getApiBaseUrl = () => {
             console.warn('Invalid api_url parameter, using default');
         }
     }
-    
+
     // Default to the Cloudflare Tunnel if in prod/preview, or localhost for dev if not set
     return import.meta.env.VITE_API_URL || 'https://waterproof-hand-andrew-segments.trycloudflare.com';
 }
@@ -79,7 +79,7 @@ const generateUUID = () => {
         bytes[6] = (bytes[6] & 0x0f) | 0x40; // Version 4
         bytes[8] = (bytes[8] & 0x3f) | 0x80; // Variant 10
         const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-        return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20,32)}`;
+        return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
     }
     // Last resort fallback (should never happen in modern browsers)
     return Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -178,6 +178,7 @@ function App() {
     }
 
     const chatEndRef = useRef(null)
+    const mobileChatEndRef = useRef(null)
 
     const handleMessageFeedback = useCallback((messageIndex, type) => {
         setFeedbackByMessage(prev => ({
@@ -188,8 +189,9 @@ function App() {
 
     // Scroll to bottom of chat
     useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages])
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+        mobileChatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    }, [messages, isThinking])
 
     // Auto-locate on mount
     useEffect(() => {
@@ -410,7 +412,7 @@ function App() {
             <div className="noise-bg fixed inset-0 z-0"></div>
             <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-emerald-500/5 blur-[150px] pointer-events-none animate-pulse duration-[10s] fixed"></div>
             <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-500/5 blur-[150px] pointer-events-none animate-pulse duration-[15s] fixed"></div>
-            
+
             {/* Toast Notification */}
             <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: '' })} />
 
@@ -431,7 +433,7 @@ function App() {
             </div>
 
             {/* Main Content Area - Flexible Region */}
-            <main className="relative z-10 flex-1 min-h-0 w-full max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden pb-12">
+            <main className="relative z-10 flex-1 min-h-0 w-full max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-y-auto lg:overflow-hidden pb-12">
 
                 {/* Left Column */}
                 <div className="hidden lg:flex lg:col-span-7 flex-col gap-6 h-full overflow-y-auto custom-scrollbar pr-2">
@@ -475,7 +477,7 @@ function App() {
                 <div className="lg:hidden flex flex-col gap-3 pb-0">
 
                     {/* 1. Chat (Main Priority) - Taken from Right Column logic above but simplified for mobile */}
-                    <div className="flex-1 glass-card flex flex-col border-emerald-500/10 relative h-[50vh] rounded-2xl overflow-hidden">
+                    <div className="w-full glass-card flex flex-col border-emerald-500/10 relative h-[65vh] min-h-[400px] shrink-0 rounded-2xl overflow-hidden">
                         {/* Header */}
                         <div className="pt-8 pb-4 px-3 border-b border-white/5 bg-gradient-to-r from-slate-900/50 to-transparent flex justify-between items-center shrink-0">
                             <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-2 glow-text">
@@ -493,7 +495,7 @@ function App() {
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar bg-slate-900/20">
+                        <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-4 custom-scrollbar bg-slate-900/20">
                             {messages.length === 0 && (
                                 <div className="flex flex-col items-center justify-center h-full text-center text-slate-500">
                                     <p className="font-medium text-slate-300 text-sm">Ask AgriBot</p>
@@ -509,33 +511,31 @@ function App() {
                                         className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
                                     >
                                         <div
-                                            className={`max-w-[90%] rounded-xl px-3 py-2 text-sm leading-relaxed shadow-sm ${msg.role === 'user'
+                                            className={`max-w-[90%] rounded-xl px-3 py-2 text-sm leading-relaxed shadow-sm prose prose-invert prose-sm prose-p:my-1 prose-headings:my-2 ${msg.role === 'user'
                                                 ? 'bg-emerald-600/20 border border-emerald-500/20 text-emerald-50'
                                                 : 'bg-[#1A1A1A]/90 border border-white/10 text-slate-200'
                                                 }`}
-                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(msg.content) }}
+                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parse(msg.content)) }}
                                         />
                                         {msg.role !== 'user' && (
                                             <div className="mt-1.5 flex items-center gap-2 text-[10px] text-slate-400 px-1">
                                                 <span>Rate:</span>
                                                 <button
                                                     onClick={() => handleMessageFeedback(i, 'up')}
-                                                    className={`p-1 rounded-md border transition-colors ${
-                                                        feedbackByMessage[i] === 'up'
-                                                            ? 'text-emerald-300 border-emerald-400/70 bg-emerald-500/10'
-                                                            : 'text-slate-400 border-white/10 hover:text-emerald-300 hover:border-emerald-400/60'
-                                                    }`}
+                                                    className={`p-1 rounded-md border transition-colors ${feedbackByMessage[i] === 'up'
+                                                        ? 'text-emerald-300 border-emerald-400/70 bg-emerald-500/10'
+                                                        : 'text-slate-400 border-white/10 hover:text-emerald-300 hover:border-emerald-400/60'
+                                                        }`}
                                                     title="Helpful"
                                                 >
                                                     <ThumbsUp size={12} />
                                                 </button>
                                                 <button
                                                     onClick={() => handleMessageFeedback(i, 'down')}
-                                                    className={`p-1 rounded-md border transition-colors ${
-                                                        feedbackByMessage[i] === 'down'
-                                                            ? 'text-red-300 border-red-400/70 bg-red-500/10'
-                                                            : 'text-slate-400 border-white/10 hover:text-red-300 hover:border-red-400/60'
-                                                    }`}
+                                                    className={`p-1 rounded-md border transition-colors ${feedbackByMessage[i] === 'down'
+                                                        ? 'text-red-300 border-red-400/70 bg-red-500/10'
+                                                        : 'text-slate-400 border-white/10 hover:text-red-300 hover:border-red-400/60'
+                                                        }`}
                                                     title="Not helpful"
                                                 >
                                                     <ThumbsDown size={12} />
@@ -552,7 +552,7 @@ function App() {
                                     <div className="typing-dot w-1 h-1"></div>
                                 </div>
                             )}
-                            <div ref={chatEndRef} />
+                            <div ref={mobileChatEndRef} />
                         </div>
 
                         {/* Input */}
@@ -633,7 +633,7 @@ function App() {
                 </div>
 
                 {/* Right Column: Chat & Context (Desktop Only) */}
-                <div className="hidden lg:flex lg:col-span-5 flex-col gap-4 overflow-hidden" style={{height: 'calc(100vh - 140px)'}}>
+                <div className="hidden lg:flex lg:col-span-5 flex-col gap-4 overflow-hidden" style={{ height: 'calc(100vh - 140px)' }}>
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -660,7 +660,7 @@ function App() {
                             </div>
 
                             {/* Messages List - Premium */}
-                            <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar bg-slate-900/20">
+                            <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-5 custom-scrollbar bg-slate-900/20">
                                 {messages.length === 0 && (
                                     <div className="flex flex-col items-center justify-center h-full text-center text-slate-500 space-y-4">
                                         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 flex items-center justify-center border border-white/5 overflow-hidden p-2">
@@ -695,22 +695,20 @@ function App() {
                                                     <span>Rate reply:</span>
                                                     <button
                                                         onClick={() => handleMessageFeedback(i, 'up')}
-                                                        className={`p-1 rounded-md border transition-colors ${
-                                                            feedbackByMessage[i] === 'up'
-                                                                ? 'text-emerald-300 border-emerald-400/70 bg-emerald-500/10'
-                                                                : 'text-slate-400 border-white/10 hover:text-emerald-300 hover:border-emerald-400/60'
-                                                        }`}
+                                                        className={`p-1 rounded-md border transition-colors ${feedbackByMessage[i] === 'up'
+                                                            ? 'text-emerald-300 border-emerald-400/70 bg-emerald-500/10'
+                                                            : 'text-slate-400 border-white/10 hover:text-emerald-300 hover:border-emerald-400/60'
+                                                            }`}
                                                         title="Helpful"
                                                     >
                                                         <ThumbsUp size={13} />
                                                     </button>
                                                     <button
                                                         onClick={() => handleMessageFeedback(i, 'down')}
-                                                        className={`p-1 rounded-md border transition-colors ${
-                                                            feedbackByMessage[i] === 'down'
-                                                                ? 'text-red-300 border-red-400/70 bg-red-500/10'
-                                                                : 'text-slate-400 border-white/10 hover:text-red-300 hover:border-red-400/60'
-                                                        }`}
+                                                        className={`p-1 rounded-md border transition-colors ${feedbackByMessage[i] === 'down'
+                                                            ? 'text-red-300 border-red-400/70 bg-red-500/10'
+                                                            : 'text-slate-400 border-white/10 hover:text-red-300 hover:border-red-400/60'
+                                                            }`}
                                                         title="Not helpful"
                                                     >
                                                         <ThumbsDown size={13} />
