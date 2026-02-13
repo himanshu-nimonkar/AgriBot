@@ -6,7 +6,7 @@ python-multipart==0.0.22
 
 # LangChain for Agent Orchestration
 langchain==0.2.5
-langchain-community==0.3.27
+langchain-community==0.2.5
 
 # PDF Parsing
 pdfplumber==0.10.4

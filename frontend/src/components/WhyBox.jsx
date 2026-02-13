@@ -1,17 +1,36 @@
 import { BookOpen, TrendingUp, FlaskConical, ExternalLink } from 'lucide-react'
 
 function WhyBox({ results = [], sources = [], marketData, chemicalData = [], apiUrl = 'http://localhost:8000' }) {
-    // If no data at all
+    // If no data at all, show curated Yolo County article
     if (!results.length && !sources.length && !marketData && !chemicalData.length) {
         return (
-            <div className="glass-card p-6 h-full flex flex-col items-center justify-center text-center space-y-3 opacity-50">
-                <div className="p-3 bg-slate-800 rounded-full">
-                    <BookOpen size={24} className="text-slate-500" />
+            <div className="glass-card p-0 overflow-hidden h-full flex flex-col">
+                <div className="p-4 border-b border-white/5 bg-slate-900/50">
+                    <h3 className="font-semibold text-emerald-400 flex items-center gap-2 text-sm uppercase tracking-wide">
+                        <span>🧠</span> Knowledge & Data
+                    </h3>
                 </div>
-                <h3 className="text-slate-400 font-medium">Knowledge & Data</h3>
-                <p className="text-xs text-slate-500 max-w-[200px]">
-                    Analysis sources, market data, and chemical labels will appear here.
-                </p>
+                <div className="flex-1 p-4">
+                    <div className="bg-slate-800/50 border border-emerald-500/20 rounded-lg p-4 flex items-start gap-3">
+                        <div className="p-2 bg-emerald-500/10 rounded-full">
+                            <BookOpen size={18} className="text-emerald-400" />
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-sm text-slate-200 font-semibold">Yolo County Research Spotlight</p>
+                            <p className="text-xs text-slate-400">
+                                Catch up on local insights from UC Davis' California Institute for Ag & Life Sciences.
+                            </p>
+                            <a
+                                href="https://cail.ucdavis.edu/tag/yolo-county/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200 font-semibold"
+                            >
+                                Open article <ExternalLink size={12} />
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         )
     }

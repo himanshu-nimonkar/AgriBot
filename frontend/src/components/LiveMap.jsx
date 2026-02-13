@@ -84,7 +84,7 @@ function LiveMap({ location, setLocation, satelliteData }) {
             {/* Map Container */}
             <MapContainer
                 center={[effectiveLocation.lat, effectiveLocation.lon]}
-                zoom={13}
+                zoom={effectiveLocation.zoom || 13}
                 className="h-full w-full rounded-xl z-0 bg-slate-900"
                 scrollWheelZoom={true}
             >

@@ -222,12 +222,21 @@ class ReasoningEngine:
             rag_context=self._format_rag(rag_results),
             market_context=self._format_market(market_data),
             chemical_context=self._format_chemicals(chemical_data),
-            history=session.history
+            history=session.history,
+            memory_state={
+                "crop": session.crop,
+                "location": display_address or session.location_label,
+                "key_facts": session.key_facts,
+                "advisor_points": session.advisor_points
+            }
         )
         
-        # Save interaction
+        # Save interaction (store full assistant content so follow-ups have richer context)
         self.session.add_message(session_id, "user", query)
-        self.session.add_message(session_id, "assistant", llm_resp.voice_summary)
+        self.session.add_message(session_id, "assistant", llm_resp.text)
+
+        # Update long-term memory without extra LLM calls
+        self.session.update_memory(session_id, user_text=query, assistant_text=llm_resp.text, crop=final_crop, location_label=display_address)
         
         processing_time = int((datetime.now() - start_time).total_seconds() * 1000)
         
@@ -310,7 +319,7 @@ class ReasoningEngine:
         
     def _format_rag(self, results) -> str:
         if not results: return "No research found."
-        return "\\n".join([f"- {r.text} [Source: {r.source}]" for r in results])
+        return " ".join([f"{r.text} [Source: {r.source}]" for r in results])
 
     def _format_market(self, m: Dict) -> str:
         if not m or not m.get("available"): return "Market unavailable."

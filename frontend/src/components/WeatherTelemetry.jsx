@@ -61,7 +61,6 @@ function WeatherTelemetry({ data }) {
     return (
         <div className="glass-card p-6 border-emerald-500/20">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-                <span>🌤️</span>
                 Local Conditions
             </h2>
 

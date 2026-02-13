@@ -4,7 +4,7 @@
  */
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { parse } from 'marked'
-import { MapPin, Send, Trash2, Loader2, Phone } from 'lucide-react'
+import { MapPin, Send, Trash2, Loader2, Phone, ThumbsUp, ThumbsDown } from 'lucide-react'
 import LiveMap from './components/LiveMap'
 import ErrorBoundary from './components/ErrorBoundary'
 import WeatherTelemetry from './components/WeatherTelemetry'
@@ -112,19 +112,48 @@ function App() {
         localStorage.setItem('ag_session_id', sessionId)
     }, [sessionId])
 
-    const [weatherData, setWeatherData] = useState(null)
-    const [satelliteData, setSatelliteData] = useState(null) // Start null for skeleton state
+    // Default county-wide context for initial (no prompt) state
+    const defaultWeather = {
+        temperature_c: 18.5,
+        relative_humidity: 62,
+        wind_speed_kmh: 6,
+        precipitation_mm: 0.0,
+        soil_moisture_0_7cm: 0.24,
+        soil_moisture_28_100cm: 0.28,
+        reference_evapotranspiration: 3.2,
+        spray_drift_risk: 'low',
+        fungal_risk: 'low',
+        forecast: [
+            { date: '2026-02-13', temp_max: 19, temp_min: 8, precipitation_sum: 0 },
+            { date: '2026-02-14', temp_max: 18, temp_min: 7, precipitation_sum: 0 },
+            { date: '2026-02-15', temp_max: 17, temp_min: 7, precipitation_sum: 0.5 },
+            { date: '2026-02-16', temp_max: 17, temp_min: 6, precipitation_sum: 0 },
+            { date: '2026-02-17', temp_max: 18, temp_min: 7, precipitation_sum: 0 },
+            { date: '2026-02-18', temp_max: 19, temp_min: 8, precipitation_sum: 0 },
+            { date: '2026-02-19', temp_max: 20, temp_min: 9, precipitation_sum: 0 },
+        ],
+    }
+    const defaultSatellite = {
+        ndvi_current: 0.55,
+        water_stress_level: 'Low',
+        relative_performance: 'Above average',
+    }
+
+    const [weatherData, setWeatherData] = useState(defaultWeather)
+    const [satelliteData, setSatelliteData] = useState(defaultSatellite) // County view as baseline
     const [ragResults, setRagResults] = useState([])
     const [marketData, setMarketData] = useState(null)
     const [chemicalData, setChemicalData] = useState([])
     const [sources, setSources] = useState([]) // Explicit sources list
     const [messages, setMessages] = useState([])
+    const [feedbackByMessage, setFeedbackByMessage] = useState({})
     const [isThinking, setIsThinking] = useState(false)
     const [query, setQuery] = useState('')
     const [location, setLocation] = useState({
         lat: 38.7646,
         lon: -121.9018,
-        label: 'Yolo County Center'
+        label: 'Yolo County (County View)',
+        zoom: 9
     })
 
     // Responsive State (avoid rendering hidden maps which crashes Leaflet)
@@ -149,6 +178,13 @@ function App() {
     }
 
     const chatEndRef = useRef(null)
+
+    const handleMessageFeedback = useCallback((messageIndex, type) => {
+        setFeedbackByMessage(prev => ({
+            ...prev,
+            [messageIndex]: prev[messageIndex] === type ? null : type
+        }))
+    }, [])
 
     // Scroll to bottom of chat
     useEffect(() => {
@@ -479,6 +515,33 @@ function App() {
                                                 }`}
                                             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(msg.content) }}
                                         />
+                                        {msg.role !== 'user' && (
+                                            <div className="mt-1.5 flex items-center gap-2 text-[10px] text-slate-400 px-1">
+                                                <span>Rate:</span>
+                                                <button
+                                                    onClick={() => handleMessageFeedback(i, 'up')}
+                                                    className={`p-1 rounded-md border transition-colors ${
+                                                        feedbackByMessage[i] === 'up'
+                                                            ? 'text-emerald-300 border-emerald-400/70 bg-emerald-500/10'
+                                                            : 'text-slate-400 border-white/10 hover:text-emerald-300 hover:border-emerald-400/60'
+                                                    }`}
+                                                    title="Helpful"
+                                                >
+                                                    <ThumbsUp size={12} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleMessageFeedback(i, 'down')}
+                                                    className={`p-1 rounded-md border transition-colors ${
+                                                        feedbackByMessage[i] === 'down'
+                                                            ? 'text-red-300 border-red-400/70 bg-red-500/10'
+                                                            : 'text-slate-400 border-white/10 hover:text-red-300 hover:border-red-400/60'
+                                                    }`}
+                                                    title="Not helpful"
+                                                >
+                                                    <ThumbsDown size={12} />
+                                                </button>
+                                            </div>
+                                        )}
                                     </motion.div>
                                 ))}
                             </AnimatePresence>
@@ -627,6 +690,33 @@ function App() {
                                                     }`}
                                                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parse(msg.content)) }}
                                             />
+                                            {msg.role !== 'user' && (
+                                                <div className="mt-2 flex items-center gap-2 text-[10px] text-slate-400 px-1">
+                                                    <span>Rate reply:</span>
+                                                    <button
+                                                        onClick={() => handleMessageFeedback(i, 'up')}
+                                                        className={`p-1 rounded-md border transition-colors ${
+                                                            feedbackByMessage[i] === 'up'
+                                                                ? 'text-emerald-300 border-emerald-400/70 bg-emerald-500/10'
+                                                                : 'text-slate-400 border-white/10 hover:text-emerald-300 hover:border-emerald-400/60'
+                                                        }`}
+                                                        title="Helpful"
+                                                    >
+                                                        <ThumbsUp size={13} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleMessageFeedback(i, 'down')}
+                                                        className={`p-1 rounded-md border transition-colors ${
+                                                            feedbackByMessage[i] === 'down'
+                                                                ? 'text-red-300 border-red-400/70 bg-red-500/10'
+                                                                : 'text-slate-400 border-white/10 hover:text-red-300 hover:border-red-400/60'
+                                                        }`}
+                                                        title="Not helpful"
+                                                    >
+                                                        <ThumbsDown size={13} />
+                                                    </button>
+                                                </div>
+                                            )}
                                             <span className="text-[10px] text-slate-500/60 mt-1.5 px-1 font-mono uppercase tracking-wide">
                                                 {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
