@@ -20,10 +20,10 @@ function ConversationStream({ messages, isThinking }) {
     }
 
     const handleFeedback = (messageIndex, type) => {
-        // UI-only toggle; only one can be active
+        // UI-only, mutually exclusive (toggle off if clicked again)
         setFeedback(prev => ({
             ...prev,
-            [messageIndex]: type
+            [messageIndex]: prev[messageIndex] === type ? null : type
         }))
     }
 
@@ -75,15 +75,15 @@ function ConversationStream({ messages, isThinking }) {
                                     </div>
                                 )}
 
-                                {/* Feedback buttons for assistant messages (UI-only) */}
-                                {message.role === 'assistant' && (
-                                    <div className="flex items-center gap-3 mt-3 pt-2 border-t border-white/10">
-                                        <span className="text-[10px] text-gray-400">Rate this reply:</span>
+                                {/* Feedback buttons for assistant/agent messages (UI-only) */}
+                                {message.role !== 'user' && (
+                                    <div className="flex items-center gap-3 mt-3 pt-2 border-t border-white/10 text-[11px] text-slate-300">
+                                        <span className="text-[10px] text-gray-400">Rate reply:</span>
                                         <button
                                             onClick={() => handleFeedback(index, 'up')}
                                             className={`p-1.5 rounded-md border transition-colors ${
                                                 feedback[index] === 'up'
-                                                    ? 'text-green-400 border-green-500/60 bg-green-500/10'
+                                                    ? 'text-green-300 border-green-400 bg-green-500/10'
                                                     : 'text-gray-300 border-white/10 hover:border-green-400 hover:text-green-300'
                                             }`}
                                             title="Good response"
@@ -96,7 +96,7 @@ function ConversationStream({ messages, isThinking }) {
                                             onClick={() => handleFeedback(index, 'down')}
                                             className={`p-1.5 rounded-md border transition-colors ${
                                                 feedback[index] === 'down'
-                                                    ? 'text-red-400 border-red-500/60 bg-red-500/10'
+                                                    ? 'text-red-300 border-red-400 bg-red-500/10'
                                                     : 'text-gray-300 border-white/10 hover:border-red-400 hover:text-red-300'
                                             }`}
                                             title="Bad response"

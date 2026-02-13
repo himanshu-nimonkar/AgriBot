@@ -4,7 +4,7 @@
  */
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { parse } from 'marked'
-import { MapPin, Send, Trash2, Loader2, Phone } from 'lucide-react'
+import { MapPin, Send, Trash2, Loader2, Phone, ThumbsUp, ThumbsDown } from 'lucide-react'
 import LiveMap from './components/LiveMap'
 import ErrorBoundary from './components/ErrorBoundary'
 import WeatherTelemetry from './components/WeatherTelemetry'
@@ -146,6 +146,7 @@ function App() {
     const [chemicalData, setChemicalData] = useState([])
     const [sources, setSources] = useState([]) // Explicit sources list
     const [messages, setMessages] = useState([])
+    const [feedbackByMessage, setFeedbackByMessage] = useState({})
     const [isThinking, setIsThinking] = useState(false)
     const [query, setQuery] = useState('')
     const [location, setLocation] = useState({
@@ -177,6 +178,13 @@ function App() {
     }
 
     const chatEndRef = useRef(null)
+
+    const handleMessageFeedback = useCallback((messageIndex, type) => {
+        setFeedbackByMessage(prev => ({
+            ...prev,
+            [messageIndex]: prev[messageIndex] === type ? null : type
+        }))
+    }, [])
 
     // Scroll to bottom of chat
     useEffect(() => {
@@ -507,6 +515,33 @@ function App() {
                                                 }`}
                                             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(msg.content) }}
                                         />
+                                        {msg.role !== 'user' && (
+                                            <div className="mt-1.5 flex items-center gap-2 text-[10px] text-slate-400 px-1">
+                                                <span>Rate:</span>
+                                                <button
+                                                    onClick={() => handleMessageFeedback(i, 'up')}
+                                                    className={`p-1 rounded-md border transition-colors ${
+                                                        feedbackByMessage[i] === 'up'
+                                                            ? 'text-emerald-300 border-emerald-400/70 bg-emerald-500/10'
+                                                            : 'text-slate-400 border-white/10 hover:text-emerald-300 hover:border-emerald-400/60'
+                                                    }`}
+                                                    title="Helpful"
+                                                >
+                                                    <ThumbsUp size={12} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleMessageFeedback(i, 'down')}
+                                                    className={`p-1 rounded-md border transition-colors ${
+                                                        feedbackByMessage[i] === 'down'
+                                                            ? 'text-red-300 border-red-400/70 bg-red-500/10'
+                                                            : 'text-slate-400 border-white/10 hover:text-red-300 hover:border-red-400/60'
+                                                    }`}
+                                                    title="Not helpful"
+                                                >
+                                                    <ThumbsDown size={12} />
+                                                </button>
+                                            </div>
+                                        )}
                                     </motion.div>
                                 ))}
                             </AnimatePresence>
@@ -655,6 +690,33 @@ function App() {
                                                     }`}
                                                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parse(msg.content)) }}
                                             />
+                                            {msg.role !== 'user' && (
+                                                <div className="mt-2 flex items-center gap-2 text-[10px] text-slate-400 px-1">
+                                                    <span>Rate reply:</span>
+                                                    <button
+                                                        onClick={() => handleMessageFeedback(i, 'up')}
+                                                        className={`p-1 rounded-md border transition-colors ${
+                                                            feedbackByMessage[i] === 'up'
+                                                                ? 'text-emerald-300 border-emerald-400/70 bg-emerald-500/10'
+                                                                : 'text-slate-400 border-white/10 hover:text-emerald-300 hover:border-emerald-400/60'
+                                                        }`}
+                                                        title="Helpful"
+                                                    >
+                                                        <ThumbsUp size={13} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleMessageFeedback(i, 'down')}
+                                                        className={`p-1 rounded-md border transition-colors ${
+                                                            feedbackByMessage[i] === 'down'
+                                                                ? 'text-red-300 border-red-400/70 bg-red-500/10'
+                                                                : 'text-slate-400 border-white/10 hover:text-red-300 hover:border-red-400/60'
+                                                        }`}
+                                                        title="Not helpful"
+                                                    >
+                                                        <ThumbsDown size={13} />
+                                                    </button>
+                                                </div>
+                                            )}
                                             <span className="text-[10px] text-slate-500/60 mt-1.5 px-1 font-mono uppercase tracking-wide">
                                                 {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
