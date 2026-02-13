@@ -112,8 +112,35 @@ function App() {
         localStorage.setItem('ag_session_id', sessionId)
     }, [sessionId])
 
-    const [weatherData, setWeatherData] = useState(null)
-    const [satelliteData, setSatelliteData] = useState(null) // Start null for skeleton state
+    // Default county-wide context for initial (no prompt) state
+    const defaultWeather = {
+        temperature_c: 18.5,
+        relative_humidity: 62,
+        wind_speed_kmh: 6,
+        precipitation_mm: 0.0,
+        soil_moisture_0_7cm: 0.24,
+        soil_moisture_28_100cm: 0.28,
+        reference_evapotranspiration: 3.2,
+        spray_drift_risk: 'low',
+        fungal_risk: 'low',
+        forecast: [
+            { date: '2026-02-13', temp_max: 19, temp_min: 8, precipitation_sum: 0 },
+            { date: '2026-02-14', temp_max: 18, temp_min: 7, precipitation_sum: 0 },
+            { date: '2026-02-15', temp_max: 17, temp_min: 7, precipitation_sum: 0.5 },
+            { date: '2026-02-16', temp_max: 17, temp_min: 6, precipitation_sum: 0 },
+            { date: '2026-02-17', temp_max: 18, temp_min: 7, precipitation_sum: 0 },
+            { date: '2026-02-18', temp_max: 19, temp_min: 8, precipitation_sum: 0 },
+            { date: '2026-02-19', temp_max: 20, temp_min: 9, precipitation_sum: 0 },
+        ],
+    }
+    const defaultSatellite = {
+        ndvi_current: 0.55,
+        water_stress_level: 'Low',
+        relative_performance: 'Above average',
+    }
+
+    const [weatherData, setWeatherData] = useState(defaultWeather)
+    const [satelliteData, setSatelliteData] = useState(defaultSatellite) // County view as baseline
     const [ragResults, setRagResults] = useState([])
     const [marketData, setMarketData] = useState(null)
     const [chemicalData, setChemicalData] = useState([])
@@ -124,7 +151,8 @@ function App() {
     const [location, setLocation] = useState({
         lat: 38.7646,
         lon: -121.9018,
-        label: 'Yolo County Center'
+        label: 'Yolo County (County View)',
+        zoom: 9
     })
 
     // Responsive State (avoid rendering hidden maps which crashes Leaflet)

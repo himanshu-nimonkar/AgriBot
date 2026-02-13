@@ -91,22 +91,26 @@ class CloudflareLLMService:
         economic_context: Optional[str] = None,
         market_context: Optional[str] = None,
         chemical_context: Optional[str] = None,
-        history: List[Dict] = []
+        history: List[Dict] = [],
+        memory_state: Optional[Dict] = None
     ) -> LLMResponse:
         """
-        Generate an expert agricultural response with a concise voice summary.
+        Generate a concise and expert agricultural response.
         """
-        system_prompt = """You are Deep-Ag Copilot, an expert agricultural advisor for Yolo County.
-
+        system_prompt = """You are Deep-Ag Copilot, a seasoned Yolo County agronomist who speaks like a helpful neighbor.
+VOICE & TONE:
+Sound like an expert friend: confident, practical, warm, not robotic.
+If something is uncertain, do not give false answers admit you dont know and according to you what is the safest option.
 OUTPUT FORMAT:
 Return the response enclosed in these exact XML tags. Do not use Markdown code blocks for the tags themselves.
-
+STYLE:
+Use plain language, but keep expert precision (timing, thresholds, tradeoffs).
 <voice_summary>
-Conversational answer (Exactly 3-4 lines/sentences). Explain the 'Why'. If asking for a 'Best' time/place, give a direct recommendation. Be concise but do not lose key details.
+Exactly 3-5 Conversational answer sentences. Explain the "why" briefly. Avoid bullets.
 </voice_summary>
 
 <full_response>
-Detailed analysis with [Source: ...] citations. Use Markdown formatting (bold, lists) inside this block.
+Give 1–2 cohesive paragraphs (no bullet lists) that weave together the weather, satellite, and research context. Sound like an expert friend from Yolo County. Keep it specific and practical. Include [Source: ...] inline for any facts drawn from research. Avoid Markdown lists unless absolutely necessary.
 </full_response>
 
 <sources>
@@ -123,14 +127,14 @@ CRITICAL RULES:
 3. OPTIMIZATION QUESTIONS:
    - "Where in Yolo?": Recommend specific zones (e.g. "Capay Valley for organic...", "Clarksburg for grapes...") based on RAG knowledge.
    - "When to plant/harvest?": Use GDD and current soil moisture data to justify the timing.
-4. Voice summary should be natural and advisory.
-5. DO NOT hallucinate.
+4. Voice summary should feel like you're speaking directly to the grower, not as a generic AI.
+5. DO NOT hallucinate. DO NOT REPLY WRONG ANSWERS INSTEAD ADMIT YOU DONT KNOW. 
 """
 
-        # Format history (last 3 turns)
+        # Format history (last 8 turns for better memory)
         history_text = ""
         if history:
-            relevant_history = history[-3:] # Last 3 messages
+            relevant_history = history[-8:] # Last 8 messages
             for msg in relevant_history:
                 role = "Farmer" if msg['role'] == 'user' else "Advisor"
                 history_text += f"{role}: {msg['content']}\n"
@@ -138,7 +142,25 @@ CRITICAL RULES:
         if not history_text:
             history_text = "No previous context."
 
+        # Long-term memory (persisted state)
+        memory_text = "No long-term memory yet."
+        if memory_state:
+            mem_parts = []
+            if memory_state.get("crop"):
+                mem_parts.append(f"Crop: {memory_state['crop']}")
+            if memory_state.get("location"):
+                mem_parts.append(f"Location: {memory_state['location']}")
+            if memory_state.get("key_facts"):
+                mem_parts.append("Key facts: " + " | ".join(memory_state["key_facts"]))
+            if memory_state.get("advisor_points"):
+                mem_parts.append("Advisor points given: " + " | ".join(memory_state["advisor_points"]))
+            if mem_parts:
+                memory_text = "\n".join(mem_parts)
+
         prompt = f"""CROP: {crop}
+LONG-TERM MEMORY:
+{memory_text}
+
 HISTORY:
 {history_text}
 
@@ -384,11 +406,12 @@ async def generate_response(
     economic: Optional[str] = None,
     market: Optional[str] = None,
     chemical: Optional[str] = None,
-    history: List[Dict] = []
+    history: List[Dict] = [],
+    memory_state: Optional[Dict] = None
 ) -> LLMResponse:
     """Convenience function for agricultural response generation."""
     return await llm_service.generate_agricultural_response(
-        query, crop, weather, satellite, rag, economic, market, chemical, history
+        query, crop, weather, satellite, rag, economic, market, chemical, history, memory_state
     )
 
 

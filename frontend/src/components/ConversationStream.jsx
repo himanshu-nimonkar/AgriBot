@@ -20,9 +20,10 @@ function ConversationStream({ messages, isThinking }) {
     }
 
     const handleFeedback = (messageIndex, type) => {
+        // UI-only toggle; only one can be active
         setFeedback(prev => ({
             ...prev,
-            [messageIndex]: feedback[messageIndex] === type ? null : type
+            [messageIndex]: type
         }))
     }
 
@@ -57,8 +58,8 @@ function ConversationStream({ messages, isThinking }) {
                         <div className="w-full max-w-[85%]">
                             <div
                                 className={`rounded-2xl px-4 py-3 ${message.role === 'user'
-                                        ? 'bg-agri-600 text-white'
-                                        : 'bg-gray-700/50 text-gray-100'
+                                    ? 'bg-agri-600 text-white'
+                                    : 'bg-gray-700/50 text-gray-100'
                                     }`}
                             >
                                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -74,39 +75,37 @@ function ConversationStream({ messages, isThinking }) {
                                     </div>
                                 )}
 
+                                {/* Feedback buttons for assistant messages (UI-only) */}
+                                {message.role === 'assistant' && (
+                                    <div className="flex items-center gap-3 mt-3 pt-2 border-t border-white/10">
+                                        <button
+                                            onClick={() => handleFeedback(index, 'up')}
+                                            className={`p-1.5 rounded hover:bg-gray-700 transition-colors ${feedback[index] === 'up' ? 'text-green-500' : 'text-gray-400 hover:text-gray-200'
+                                                }`}
+                                            title="Good response"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            onClick={() => handleFeedback(index, 'down')}
+                                            className={`p-1.5 rounded hover:bg-gray-700 transition-colors ${feedback[index] === 'down' ? 'text-red-500' : 'text-gray-400 hover:text-gray-200'
+                                                }`}
+                                            title="Bad response"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                )}
+
                                 <p className={`text-[10px] mt-2 ${message.role === 'user' ? 'text-agri-200' : 'text-gray-500'
                                     }`}>
                                     {formatTime(message.timestamp)}
                                 </p>
                             </div>
-
-                            {/* Feedback buttons for assistant messages - OUTSIDE the message box like ChatGPT */}
-                            {message.role === 'assistant' && (
-                                <div className="flex items-center gap-2 mt-2 ml-1">
-                                    <button
-                                        onClick={() => handleFeedback(index, 'up')}
-                                        className={`p-1.5 rounded hover:bg-gray-700 transition-colors ${
-                                            feedback[index] === 'up' ? 'text-green-500' : 'text-gray-400 hover:text-gray-200'
-                                        }`}
-                                        title="Good response"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-                                        </svg>
-                                    </button>
-                                    <button
-                                        onClick={() => handleFeedback(index, 'down')}
-                                        className={`p-1.5 rounded hover:bg-gray-700 transition-colors ${
-                                            feedback[index] === 'down' ? 'text-red-500' : 'text-gray-400 hover:text-gray-200'
-                                        }`}
-                                        title="Bad response"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            )}
                         </div>
                     </div>
                 ))}
