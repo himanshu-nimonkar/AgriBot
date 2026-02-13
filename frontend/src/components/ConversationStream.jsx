@@ -78,10 +78,14 @@ function ConversationStream({ messages, isThinking }) {
                                 {/* Feedback buttons for assistant messages (UI-only) */}
                                 {message.role === 'assistant' && (
                                     <div className="flex items-center gap-3 mt-3 pt-2 border-t border-white/10">
+                                        <span className="text-[10px] text-gray-400">Rate this reply:</span>
                                         <button
                                             onClick={() => handleFeedback(index, 'up')}
-                                            className={`p-1.5 rounded hover:bg-gray-700 transition-colors ${feedback[index] === 'up' ? 'text-green-500' : 'text-gray-400 hover:text-gray-200'
-                                                }`}
+                                            className={`p-1.5 rounded-md border transition-colors ${
+                                                feedback[index] === 'up'
+                                                    ? 'text-green-400 border-green-500/60 bg-green-500/10'
+                                                    : 'text-gray-300 border-white/10 hover:border-green-400 hover:text-green-300'
+                                            }`}
                                             title="Good response"
                                         >
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -90,8 +94,11 @@ function ConversationStream({ messages, isThinking }) {
                                         </button>
                                         <button
                                             onClick={() => handleFeedback(index, 'down')}
-                                            className={`p-1.5 rounded hover:bg-gray-700 transition-colors ${feedback[index] === 'down' ? 'text-red-500' : 'text-gray-400 hover:text-gray-200'
-                                                }`}
+                                            className={`p-1.5 rounded-md border transition-colors ${
+                                                feedback[index] === 'down'
+                                                    ? 'text-red-400 border-red-500/60 bg-red-500/10'
+                                                    : 'text-gray-300 border-white/10 hover:border-red-400 hover:text-red-300'
+                                            }`}
                                             title="Bad response"
                                         >
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
