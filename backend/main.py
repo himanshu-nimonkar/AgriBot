@@ -50,6 +50,12 @@ from services.weather import weather_service
 from services.rag import rag_service
 from services.llm import llm_service
 
+# Morph LLM integration (additive)
+try:
+    from services.morph_service import morph_service
+except ImportError:
+    morph_service = None
+
 
 # ==================
 # WebSocket Manager
@@ -115,6 +121,8 @@ async def lifespan(app: FastAPI):
     await weather_service.close()
     await rag_service.close()
     await llm_service.close()
+    if morph_service:
+        await morph_service.close()
 
 
 # ==================
@@ -255,11 +263,63 @@ async def analyze(request: AnalyzeRequest):
             lon=response.lon,
             query=response.query,
             timestamp=response.timestamp,
-            processing_time_ms=response.processing_time_ms
+            processing_time_ms=response.processing_time_ms,
+            morph_difficulty=response.morph_difficulty,
+            morph_warpgrep_results=response.morph_warpgrep_results
         )
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================
+# Morph LLM Endpoints (Additive)
+# ==================
+
+@app.get("/api/morph/health")
+async def morph_health():
+    """Check Morph LLM integration status."""
+    if not morph_service or not morph_service.enabled:
+        return {
+            "status": "disabled",
+            "message": "Morph API key not configured",
+            "features": []
+        }
+    return {
+        "status": "enabled",
+        "message": "Morph LLM integration active",
+        "features": ["rerank", "router", "warpgrep"],
+        "api_base": morph_service.BASE_URL
+    }
+
+
+@app.post("/api/morph/warpgrep")
+async def morph_warpgrep_search(request: Request):
+    """
+    Direct WarpGrep search against agricultural knowledge base.
+    Uses Morph's AI sub-agent to search through research PDFs.
+    """
+    if not morph_service or not morph_service.enabled:
+        raise HTTPException(status_code=503, detail="Morph service not configured")
+    
+    try:
+        body = await request.json()
+        query = body.get("query", "")
+        if not query:
+            raise HTTPException(status_code=400, detail="Query is required")
+        
+        result = await morph_service.warpgrep_search(query)
+        return {
+            "success": result.success,
+            "contexts": result.contexts,
+            "error": result.error,
+            "query": query,
+            "timestamp": datetime.now().isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"WarpGrep search failed: {str(e)}")
 
 
 # ==================

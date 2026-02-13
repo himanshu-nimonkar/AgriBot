@@ -109,6 +109,9 @@ class AnalyzeResponse(BaseModel):
     query: str
     timestamp: str
     processing_time_ms: int
+    # Morph LLM fields (additive)
+    morph_difficulty: Optional[str] = None  # Query difficulty: easy/medium/hard
+    morph_warpgrep_results: Optional[List[Dict[str, Any]]] = None  # WarpGrep search results
 
 
 class HealthResponse(BaseModel):

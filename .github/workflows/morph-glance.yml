@@ -1,0 +1,67 @@
+name: Morph Glance - Automated Dashboard Testing
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  morph-glance-test:
+    runs-on: ubuntu-latest
+    name: Morph Glance Dashboard Test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Morph SDK
+        run: npm install @morphllm/morphsdk
+      
+      - name: Run Glance Dashboard Tests
+        env:
+          MORPH_API_KEY: ${{ secrets.MORPH_API_KEY }}
+        run: |
+          node -e "
+          const { MorphClient } = require('@morphllm/morphsdk');
+          
+          async function testDashboard() {
+            const morph = new MorphClient({ apiKey: process.env.MORPH_API_KEY });
+            
+            // Test 1: Dashboard loads correctly
+            console.log('🧪 Test 1: Dashboard load and navigation...');
+            const loadTest = await morph.browser.execute({
+              task: 'Verify the AgriBot dashboard loads correctly. Check that: 1) The map component renders, 2) The chat input is visible and functional, 3) The sidebar with weather data is present, 4) The voice call button is visible. Report any errors or missing elements.',
+              url: process.env.DEPLOY_URL || 'https://agribot-preview.vercel.app'
+            });
+            
+            console.log('Load Test:', loadTest.success ? '✅ PASSED' : '❌ FAILED');
+            console.log('Details:', loadTest.result);
+            
+            // Test 2: Chat functionality
+            console.log('\\n🧪 Test 2: Chat interaction...');
+            const chatTest = await morph.browser.execute({
+              task: 'On the AgriBot dashboard, type \"What crops grow best in Yolo County?\" in the chat input and submit it. Wait for a response. Verify that the AI provides an agricultural response about Yolo County crops.',
+              url: process.env.DEPLOY_URL || 'https://agribot-preview.vercel.app'
+            });
+            
+            console.log('Chat Test:', chatTest.success ? '✅ PASSED' : '❌ FAILED');
+            console.log('Details:', chatTest.result);
+            
+            // Exit with error if any test failed
+            if (!loadTest.success || !chatTest.success) {
+              process.exit(1);
+            }
+            
+            console.log('\\n🎉 All Morph Glance tests passed!');
+          }
+          
+          testDashboard().catch(err => {
+            console.error('Test runner error:', err);
+            process.exit(1);
+          });
+          "

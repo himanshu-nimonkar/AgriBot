@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # Google Earth Engine
     gee_service_account_file: str = ""
     
+    # Morph LLM (additive integration)
+    morph_api_key: str = ""
+    
     # Vapi.ai
     vapi_private_key: str = ""
     vapi_public_key: str = ""

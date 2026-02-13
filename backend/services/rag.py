@@ -14,6 +14,12 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import settings
 
+# Import Morph service for reranking (additive, not replacing Cloudflare)
+try:
+    from services.morph_service import morph_service
+except ImportError:
+    morph_service = None
+
 
 @dataclass
 class SearchResult:
@@ -133,6 +139,39 @@ class CloudflareRAGService:
                     score=match.get("score", 0),
                     metadata=metadata
                 ))
+            
+            # ---- Morph Rerank (additive second-stage) ----
+            # Re-orders results by relevance using Morph's GPU reranker.
+            # Falls back silently to original Vectorize order if unavailable.
+            if results and morph_service and morph_service.enabled:
+                try:
+                    documents = [r.text for r in results if r.text]
+                    if documents:
+                        reranked = await morph_service.rerank_results(
+                            query=query,
+                            documents=documents,
+                            top_n=top_k
+                        )
+                        if reranked:
+                            # Rebuild results in reranked order
+                            reranked_results = []
+                            for rr in reranked:
+                                if rr.index < len(results):
+                                    original = results[rr.index]
+                                    # Preserve original data, update score to rerank score
+                                    reranked_results.append(SearchResult(
+                                        text=original.text,
+                                        source=original.source,
+                                        page=original.page,
+                                        score=rr.relevance_score,
+                                        metadata={**original.metadata, "morph_rerank_score": rr.relevance_score, "original_vectorize_score": original.score}
+                                    ))
+                            if reranked_results:
+                                results = reranked_results
+                                print(f"[RAG] Results reranked by Morph ({len(reranked_results)} items)")
+                except Exception as rerank_err:
+                    print(f"[RAG] Morph rerank failed (keeping original order): {rerank_err}")
+            # ---- End Morph Rerank ----
             
             return results
 
