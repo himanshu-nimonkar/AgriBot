@@ -7,7 +7,7 @@ FREE for non-commercial use.
 import ee
 import json
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 import os
 import sys
@@ -41,6 +41,11 @@ class FieldAnalytics:
     ndvi_tile_url: Optional[str] = None
     ndwi_tile_url: Optional[str] = None
     tile_url: Optional[str] = None  # Generic tile URL for frontend
+    ndvi_timeline: Optional[List[Dict[str, Any]]] = None
+    soil_type: Optional[str] = None
+    soil_probabilities: Optional[List[List[Any]]] = None
+    elevation_m: Optional[float] = None
+    is_mock: bool = False
 
 
 class GEEService:
@@ -137,20 +142,28 @@ class GEEService:
         self, 
         lat: float, 
         lon: float,
-        radius_m: int = 500
+        radius_m: int = 500,
+        include_timeline: bool = False
     ) -> FieldAnalytics:
         """
         Get comprehensive field analytics for a location.
         Runs in a thread to verify it doesn't block the event loop.
         """
         import asyncio
-        return await asyncio.to_thread(self._get_field_analytics_sync, lat, lon, radius_m)
+        return await asyncio.to_thread(
+            self._get_field_analytics_sync,
+            lat,
+            lon,
+            radius_m,
+            include_timeline
+        )
 
     def _get_field_analytics_sync(
         self, 
         lat: float, 
         lon: float,
-        radius_m: int = 500
+        radius_m: int = 500,
+        include_timeline: bool = False
     ) -> FieldAnalytics:
         """
         Synchronous implementation of field analytics.
@@ -173,7 +186,9 @@ class GEEService:
                 water_stress_level="low",
                 county_avg_ndvi=0.48,
                 relative_performance="above",
-                tile_url=None
+                tile_url=None,
+                ndvi_timeline=[],
+                is_mock=True
             )
         
         area = self._get_buffer(lat, lon, radius_m)
@@ -295,6 +310,8 @@ class GEEService:
         else:
             relative_performance = "at"
         
+        ndvi_timeline = self._get_ndvi_timeline_sync(lat, lon, days=30) if include_timeline else []
+
         return FieldAnalytics(
             latitude=lat,
             longitude=lon,
@@ -307,8 +324,82 @@ class GEEService:
             county_avg_ndvi=round(county_avg_ndvi, 3),
             relative_performance=relative_performance,
             tile_url=tile_url,
-            ndwi_tile_url=ndwi_tile_url
+            ndwi_tile_url=ndwi_tile_url,
+            ndvi_timeline=ndvi_timeline,
+            is_mock=False
         )
+
+    async def get_ndvi_timeline(
+        self,
+        lat: float,
+        lon: float,
+        days: int = 30
+    ) -> List[Dict[str, Any]]:
+        import asyncio
+        return await asyncio.to_thread(self._get_ndvi_timeline_sync, lat, lon, days)
+
+    def _get_ndvi_timeline_sync(
+        self,
+        lat: float,
+        lon: float,
+        days: int = 30
+    ) -> List[Dict[str, Any]]:
+        self.initialize()
+        if self._mock_mode:
+            return []
+
+        try:
+            area = self._get_buffer(lat, lon, 500)
+            today = datetime.now().date()
+            start_date = (today - timedelta(days=days + 5)).strftime("%Y-%m-%d")
+            end_date = today.strftime("%Y-%m-%d")
+
+            collection = self._get_sentinel2_collection(area, start_date, end_date, cloud_cover_max=35)
+            total_images = int(collection.size().getInfo() or 0)
+            if total_images <= 0:
+                return []
+
+            by_date = {}
+            image_count = min(total_images, 90)
+            image_list = collection.sort("system:time_start", False).toList(image_count)
+
+            for i in range(image_count):
+                try:
+                    image = ee.Image(image_list.get(i))
+                    date_str = ee.Date(image.get("system:time_start")).format("YYYY-MM-dd").getInfo()
+                    ndvi = image.normalizedDifference(["B8", "B4"]).rename("NDVI")
+                    stats = ndvi.reduceRegion(
+                        reducer=ee.Reducer.mean(),
+                        geometry=area,
+                        scale=10,
+                        maxPixels=1e9
+                    ).getInfo()
+                    ndvi_value = stats.get("NDVI")
+                    if date_str is not None and ndvi_value is not None:
+                        by_date[date_str] = round(float(ndvi_value), 3)
+                except Exception:
+                    continue
+
+            if not by_date:
+                return []
+
+            latest_known = by_date[max(by_date.keys())]
+            timeline = []
+            for day_offset in range(0, days + 1):
+                point_date = (today - timedelta(days=day_offset)).strftime("%Y-%m-%d")
+                if point_date in by_date:
+                    latest_known = by_date[point_date]
+                timeline.append({
+                    "date": point_date,
+                    "ndvi": latest_known,
+                    "observed": point_date in by_date,
+                    "days_ago": day_offset
+                })
+
+            return timeline
+        except Exception as e:
+            print(f"Error getting NDVI timeline: {e}")
+            return []
     
     def get_ndvi_tile_url(self, lat: float, lon: float) -> Optional[str]:
         """
@@ -392,6 +483,6 @@ class GEEService:
 gee_service = GEEService()
 
 
-async def get_field_analytics(lat: float, lon: float) -> FieldAnalytics:
+async def get_field_analytics(lat: float, lon: float, include_timeline: bool = False) -> FieldAnalytics:
     """Convenience function to get field analytics."""
-    return await gee_service.get_field_analytics(lat, lon)
+    return await gee_service.get_field_analytics(lat, lon, include_timeline=include_timeline)

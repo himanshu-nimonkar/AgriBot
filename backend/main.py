@@ -43,12 +43,16 @@ from models.schemas import (
     AnalyzeResponse, 
     HealthResponse,
     DashboardUpdate,
-    ConversationMessage
+    ConversationMessage,
+    HistoricalWeatherResponse,
+    ForecastAccuracyResponse
 )
 from agents.reasoning_engine import reasoning_engine, AgentResponse
 from services.weather import weather_service
+from services.geospatial import gee_service
 from services.rag import rag_service
 from services.llm import llm_service
+import httpx
 
 # Morph LLM integration (additive)
 try:
@@ -166,6 +170,110 @@ async def health_check():
             "rag": "ok"
         }
     )
+
+
+# ==================
+# Weather Endpoints
+# ==================
+
+@app.get("/api/weather/history")
+async def get_weather_history(
+    lat: float = 38.5449,
+    lon: float = -121.7405,
+    days: int = 30
+):
+    """Get historical weather data for the past N days."""
+    try:
+        data = await weather_service.get_historical_weather(lat, lon, days)
+        return HistoricalWeatherResponse(**data) if "error" not in data else data
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.get("/api/weather/accuracy")
+async def get_weather_accuracy(
+    lat: float = 38.5449,
+    lon: float = -121.7405
+):
+    """Get forecast accuracy comparison (predicted vs actual)."""
+    try:
+        data = await weather_service.get_forecast_accuracy(lat, lon)
+        return ForecastAccuracyResponse(**data) if "error" not in data else data
+    except Exception as e:
+        return {"error": str(e)}
+
+
+async def _fetch_soil_type(lat: float, lon: float) -> Optional[dict]:
+    """Fetch WRB soil class from SoilGrids."""
+    url = "https://rest.isric.org/soilgrids/v2.0/classification/query"
+    params = {"lat": lat, "lon": lon, "number_classes": 3}
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(url, params=params)
+            response.raise_for_status()
+            payload = response.json()
+            return {
+                "soil_type": payload.get("wrb_class_name"),
+                "soil_probabilities": payload.get("wrb_class_probability", [])
+            }
+    except Exception:
+        return None
+
+
+async def _fetch_elevation(lat: float, lon: float) -> Optional[float]:
+    """Fetch point elevation from Open-Meteo elevation API."""
+    url = "https://api.open-meteo.com/v1/elevation"
+    params = {"latitude": lat, "longitude": lon}
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(url, params=params)
+            response.raise_for_status()
+            payload = response.json()
+            values = payload.get("elevation") or []
+            if not values:
+                return None
+            return float(values[0])
+    except Exception:
+        return None
+
+
+@app.get("/api/location/telemetry")
+async def get_location_telemetry(
+    lat: float = 38.5449,
+    lon: float = -121.7405
+):
+    """
+    Lightweight endpoint for map/data tab refreshes.
+    Returns weather + satellite + NDVI timeline + soil + elevation for a point.
+    """
+    try:
+        weather_task = weather_service.get_weather(lat, lon)
+        satellite_task = gee_service.get_field_analytics(lat, lon, include_timeline=True)
+        soil_task = _fetch_soil_type(lat, lon)
+        elevation_task = _fetch_elevation(lat, lon)
+
+        weather_data, satellite_data, soil_data, elevation = await asyncio.gather(
+            weather_task,
+            satellite_task,
+            soil_task,
+            elevation_task
+        )
+
+        sat_payload = asdict(satellite_data) if satellite_data else None
+        if sat_payload is not None:
+            if soil_data:
+                sat_payload["soil_type"] = soil_data.get("soil_type")
+                sat_payload["soil_probabilities"] = soil_data.get("soil_probabilities", [])
+            sat_payload["elevation_m"] = elevation
+
+        return {
+            "lat": lat,
+            "lon": lon,
+            "weather_data": asdict(weather_data) if weather_data else None,
+            "satellite_data": sat_payload
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Telemetry fetch failed: {e}")
 
 
 # ==================

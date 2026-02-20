@@ -233,6 +233,193 @@ class WeatherService:
             days_since_jan1 = (datetime.now() - datetime(datetime.now().year, 1, 1)).days
             return round(days_since_jan1 * 8.5, 1)  # Rough estimate for Yolo County
     
+    async def get_historical_weather(
+        self,
+        lat: float,
+        lon: float,
+        days: int = 30
+    ) -> dict:
+        """
+        Fetch historical weather data from Open-Meteo Archive API.
+        Returns daily temperature, precipitation, and humidity for the past N days.
+        """
+        end_date = datetime.now() - timedelta(days=1)  # yesterday (archive has delay)
+        start_date = end_date - timedelta(days=days)
+        
+        archive_url = "https://archive-api.open-meteo.com/v1/archive"
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "start_date": start_date.strftime("%Y-%m-%d"),
+            "end_date": end_date.strftime("%Y-%m-%d"),
+            "daily": [
+                "temperature_2m_max",
+                "temperature_2m_min",
+                "precipitation_sum",
+                "relative_humidity_2m_mean"
+            ],
+            "timezone": "America/Los_Angeles"
+        }
+        
+        try:
+            response = await self.client.get(archive_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            daily = data.get("daily", {})
+            
+            days_data = []
+            dates = daily.get("time", [])
+            t_max = daily.get("temperature_2m_max", [])
+            t_min = daily.get("temperature_2m_min", [])
+            precip = daily.get("precipitation_sum", [])
+            humidity = daily.get("relative_humidity_2m_mean", [])
+            
+            total_precip = 0.0
+            temp_sum = 0.0
+            humidity_sum = 0.0
+            valid_count = 0
+            
+            for i in range(len(dates)):
+                tmax = t_max[i] if i < len(t_max) else None
+                tmin = t_min[i] if i < len(t_min) else None
+                p = precip[i] if i < len(precip) else None
+                h = humidity[i] if i < len(humidity) else None
+                
+                days_data.append({
+                    "date": dates[i],
+                    "temp_max": tmax,
+                    "temp_min": tmin,
+                    "precipitation_sum": p,
+                    "humidity_mean": h
+                })
+                
+                if tmax is not None and tmin is not None:
+                    temp_sum += (tmax + tmin) / 2
+                    valid_count += 1
+                if p is not None:
+                    total_precip += p
+                if h is not None:
+                    humidity_sum += h
+            
+            return {
+                "days": days_data,
+                "period_start": start_date.strftime("%Y-%m-%d"),
+                "period_end": end_date.strftime("%Y-%m-%d"),
+                "avg_temp": round(temp_sum / max(valid_count, 1), 1),
+                "total_precipitation": round(total_precip, 1),
+                "avg_humidity": round(humidity_sum / max(valid_count, 1), 1)
+            }
+        except Exception as e:
+            return {
+                "days": [],
+                "period_start": start_date.strftime("%Y-%m-%d"),
+                "period_end": end_date.strftime("%Y-%m-%d"),
+                "avg_temp": None,
+                "total_precipitation": None,
+                "avg_humidity": None,
+                "error": str(e)
+            }
+    
+    async def get_forecast_accuracy(
+        self,
+        lat: float,
+        lon: float
+    ) -> dict:
+        """
+        Compare yesterday's forecasted weather (made 2 days ago) with actual conditions.
+        Returns accuracy percentages for temperature and precipitation.
+        """
+        yesterday = datetime.now() - timedelta(days=1)
+        two_days_ago = datetime.now() - timedelta(days=2)
+        
+        try:
+            # Get actual weather for yesterday from archive
+            archive_url = "https://archive-api.open-meteo.com/v1/archive"
+            actual_params = {
+                "latitude": lat,
+                "longitude": lon,
+                "start_date": yesterday.strftime("%Y-%m-%d"),
+                "end_date": yesterday.strftime("%Y-%m-%d"),
+                "daily": [
+                    "temperature_2m_max",
+                    "temperature_2m_min",
+                    "precipitation_sum"
+                ],
+                "timezone": "America/Los_Angeles"
+            }
+            actual_resp = await self.client.get(archive_url, params=actual_params)
+            actual_resp.raise_for_status()
+            actual_data = actual_resp.json().get("daily", {})
+            
+            actual_tmax = actual_data.get("temperature_2m_max", [None])[0]
+            actual_tmin = actual_data.get("temperature_2m_min", [None])[0]
+            actual_precip = actual_data.get("precipitation_sum", [None])[0]
+            
+            # Get forecast for yesterday (2 day forecast from 2 days ago)
+            forecast_params = {
+                "latitude": lat,
+                "longitude": lon,
+                "start_date": two_days_ago.strftime("%Y-%m-%d"),
+                "end_date": yesterday.strftime("%Y-%m-%d"),
+                "daily": [
+                    "temperature_2m_max",
+                    "temperature_2m_min",
+                    "precipitation_sum"
+                ],
+                "timezone": "America/Los_Angeles",
+                "forecast_days": 2
+            }
+            forecast_resp = await self.client.get(self.BASE_URL, params=forecast_params)
+            forecast_resp.raise_for_status()
+            forecast_data = forecast_resp.json().get("daily", {})
+            
+            # Get the last day (yesterday's forecast)
+            pred_tmax = forecast_data.get("temperature_2m_max", [None, None])[-1]
+            pred_tmin = forecast_data.get("temperature_2m_min", [None, None])[-1]
+            pred_precip = forecast_data.get("precipitation_sum", [None, None])[-1]
+            
+            # Calculate accuracy
+            temp_accuracy = None
+            if actual_tmax is not None and pred_tmax is not None:
+                max_error = abs(actual_tmax - pred_tmax)
+                min_error = abs(actual_tmin - pred_tmin) if actual_tmin and pred_tmin else 0
+                avg_error = (max_error + min_error) / 2
+                temp_accuracy = round(max(0, 100 - (avg_error / max(abs(actual_tmax), 1) * 100)), 1)
+            
+            precip_accuracy = None
+            if actual_precip is not None and pred_precip is not None:
+                if actual_precip == 0 and pred_precip == 0:
+                    precip_accuracy = 100.0
+                elif actual_precip == 0:
+                    precip_accuracy = max(0, 100 - pred_precip * 10)
+                else:
+                    precip_accuracy = round(max(0, 100 - abs(actual_precip - pred_precip) / actual_precip * 100), 1)
+            
+            overall = None
+            if temp_accuracy is not None and precip_accuracy is not None:
+                overall = round((temp_accuracy * 0.7 + precip_accuracy * 0.3), 1)
+            elif temp_accuracy is not None:
+                overall = temp_accuracy
+            
+            return {
+                "date": yesterday.strftime("%Y-%m-%d"),
+                "predicted_temp_max": pred_tmax,
+                "actual_temp_max": actual_tmax,
+                "predicted_temp_min": pred_tmin,
+                "actual_temp_min": actual_tmin,
+                "predicted_precipitation": pred_precip,
+                "actual_precipitation": actual_precip,
+                "temp_accuracy_pct": temp_accuracy,
+                "precip_accuracy_pct": precip_accuracy,
+                "overall_accuracy_pct": overall
+            }
+        except Exception as e:
+            return {
+                "date": yesterday.strftime("%Y-%m-%d"),
+                "error": str(e),
+                "overall_accuracy_pct": None
+            }
+    
     async def close(self):
         """Close the HTTP client."""
         await self.client.aclose()

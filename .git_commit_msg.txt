@@ -1,0 +1,29 @@
+feat: Comprehensive UI polish, claymorphism overhaul, and map enhancements
+
+This commit introduces a complete front-end overhaul, intensifying claymorphism, 
+restoring map telemetry, fixing responsive layouts, and improving overall usability.
+
+Modifications compared to feature/morph-integration:
+1. Core UI & Aesthetics:
+   - Deepened claymorphism shadows and bevels in index.css.
+   - Eliminated sharp edges on mobile by rendering isolated clay cards against the background.
+   - Removed the vestigial Settings page and DashboardConfig entirely from navigation.
+   - Replaced static connection statuses with dynamic websocket listeners in Navbar for robust online/offline reporting.
+
+2. Map & Telemetry:
+   - Restored the detailed Field Telemetry panel (NDVI, Water Stress) to the top right of the map.
+   - Re-enabled dynamic TileLayer overlays for Vegetation Health and Water Stress coloring.
+   - Fixed the "Map Unavailable" error on desktop by implementing an `isDesktop` mount check hook, preventing react-leaflet concurrent rendering container crashes.
+   - Repositioned map zoom controls (+/-) and locate button to the top left on desktop viewport for better balance.
+   - Removed old "NDVI Days Ago" timeline slider to simplify UI and prevent layout bleeding.
+   - Added stylized hover tooltips to all map layer toggle buttons.
+
+3. Weather & Data Dashboards:
+   - Integrated new components: WeatherDashboard, WeeklySummary, ForecastAccuracy, HistoricalChart, IrrigationCalc, DegreeDays, CropTracker, WeatherAlerts, AnomalyBadge.
+   - Fixed crash in Trends and History line charts caused by an undefined unitPreference key prop, fully restoring smooth left-to-right SVG draw animations.
+   - Added pb-16 equivalent bottom paddings on desktop left and right columns to ensure full visibility of the terminal sections (Growing Degree Days, Research Spotlight) without scroll clipping.
+   
+4. Interaction Details:
+   - Added custom SessionReset modal popup for clearing chats safely.
+   - Re-styled text and highlights using new theme colors (Olive Leaf, Copperwood, Black Forest).
+   - Removed whitespace anomalies between dashboard sections on mobile.

@@ -1,56 +1,100 @@
 import React from 'react';
 import { Phone } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-const Navbar = ({ connectionStatus, onCallClick }) => {
+const Navbar = ({ connectionStatus, onCallClick, onShowToast, extraButtons }) => {
     return (
-        <nav className="w-full max-w-7xl mx-auto transition-all duration-300">
-            <div className="glass-card px-4 md:px-6 py-3 flex items-center justify-between bg-slate-900/40 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50">
+        <motion.nav
+            initial={{ opacity: 0, y: -15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            className="w-full max-w-7xl mx-auto"
+            role="banner"
+        >
+            <div className="px-4 md:px-6 py-3 flex items-center justify-between clay-card-static">
                 {/* Logo Section */}
-                <div className="flex items-center space-x-3 group cursor-pointer">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-white/5 group-hover:border-emerald-500/30 transition-all overflow-hidden p-1">
+                <div className="flex items-center space-x-3 group cursor-pointer" aria-label="AgriBot Home">
+                    <motion.div
+                        whileHover={{ scale: 1.05, rotate: 2 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center justify-center w-10 h-10 rounded-xl clay-button overflow-hidden p-1"
+                    >
                         <img src="/AgriBot.png" alt="AgriBot Logo" className="w-full h-full object-contain" />
-                    </div>
+                    </motion.div>
                     <div>
-                        <h1 className="text-lg md:text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent tracking-tight">
-                            AgriBot
+                        <h1 className="text-lg md:text-xl font-bold tracking-tight text-shadow-subtle">
+                            <span className="bg-gradient-to-r from-[#283618] via-[#606c38] to-[#bc6c25] bg-clip-text text-transparent">
+                                Agri
+                            </span>
+                            <span className="bg-gradient-to-r from-[#bc6c25] to-[#dda15e] bg-clip-text text-transparent italic">
+                                Bot
+                            </span>
+                            <span className="text-olive-leaf/40 text-xs ml-0.5 align-super font-normal">🌾</span>
                         </h1>
-                        <p className="text-[10px] text-slate-400 font-mono hidden md:block tracking-wider uppercase">Yolo County Advisor</p>
+                        <p className="text-[10px] text-olive-leaf font-mono hidden md:block tracking-[0.15em] uppercase">
+                            Yolo County Advisor
+                        </p>
                     </div>
                 </div>
 
                 <div className="flex items-center space-x-3 md:space-x-4">
+                    {/* Connection Status */}
                     <div
-                        className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-950/30 border border-white/5 backdrop-blur-sm transition-all"
+                        className="flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all"
+                        style={{
+                            background: 'rgba(216, 210, 192, 0.5)',
+                            backdropFilter: 'blur(8px)',
+                            border: '1px solid rgba(255,255,255,0.3)',
+                        }}
                         title="Connection Status"
+                        role="status"
+                        aria-label={`Connection status: ${connectionStatus}`}
                     >
-                        <div className={`w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] transition-colors duration-500 ${connectionStatus === 'connected' ? 'bg-emerald-500 text-emerald-500 animate-pulse' : 'bg-red-500 text-red-500'
-                            }`} />
+                        <div className={`w-2 h-2 rounded-full transition-colors duration-500 ${connectionStatus === 'connected'
+                            ? 'bg-olive-leaf text-olive-leaf shadow-[0_0_6px_currentColor]'
+                            : 'bg-red-500 text-red-500 shadow-[0_0_6px_currentColor]'
+                        }`}
+                        style={connectionStatus === 'connected' ? { animation: 'breathe 2s ease-in-out infinite' } : {}}
+                        />
                         <span
                             onClick={() => connectionStatus !== 'connected' && onShowToast && onShowToast({ message: `Debug: Connection lost to ${window.USER_WS_URL || 'Server'}`, type: 'error' })}
-                            className={`text-xs font-medium tracking-wide cursor-pointer ${connectionStatus === 'connected' ? 'text-emerald-400' : 'text-red-400'
-                                }`}>
+                            className={`text-xs font-medium tracking-wide cursor-pointer ${connectionStatus === 'connected' ? 'text-olive-leaf' : 'text-red-500'}`}
+                        >
                             {connectionStatus === 'connected' ? 'Online' : 'Offline'}
                         </span>
                     </div>
 
-                    <button
+                    {/* Extra Buttons (e.g. Weather Alerts) */}
+                    {extraButtons && (
+                        <div className="relative flex items-center">
+                            {extraButtons}
+                        </div>
+                    )}
+
+                    {/* Desktop Call Button */}
+                    <motion.button
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.94 }}
                         onClick={onCallClick}
-                        className="hidden md:flex items-center space-x-2 px-4 py-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-500 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(46,125,50,0.4)] font-semibold text-xs uppercase tracking-wider border border-emerald-400/20"
+                        className="hidden md:flex items-center space-x-2 px-4 py-2.5 clay-primary rounded-xl font-semibold text-xs uppercase tracking-wider"
+                        aria-label="Call AI Agent"
                     >
-                        <Phone size={14} className="animate-pulse" />
+                        <Phone size={14} strokeWidth={2.5} />
                         <span>Call Agent</span>
-                    </button>
+                    </motion.button>
 
                     {/* Mobile Call Icon */}
-                    <button
+                    <motion.button
+                        whileTap={{ scale: 0.9 }}
                         onClick={onCallClick}
-                        className="md:hidden flex items-center justify-center w-9 h-9 bg-emerald-600 text-white rounded-full hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-500/20"
+                        className="md:hidden flex items-center justify-center w-10 h-10 clay-primary rounded-full shadow-lg"
+                        aria-label="Call AI Agent"
                     >
-                        <Phone size={16} />
-                    </button>
+                        <Phone size={16} strokeWidth={2.5} />
+                    </motion.button>
                 </div>
             </div>
-        </nav>
+        </motion.nav>
     );
 };
 

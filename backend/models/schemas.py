@@ -50,6 +50,39 @@ class WeatherResponse(BaseModel):
     forecast: List[Dict[str, Any]] = []
 
 
+class HistoricalDayData(BaseModel):
+    """Single day of historical weather data."""
+    date: str
+    temp_max: Optional[float] = None
+    temp_min: Optional[float] = None
+    precipitation_sum: Optional[float] = None
+    humidity_mean: Optional[float] = None
+
+
+class HistoricalWeatherResponse(BaseModel):
+    """Historical weather data for trend comparison."""
+    days: List[HistoricalDayData] = []
+    period_start: str
+    period_end: str
+    avg_temp: Optional[float] = None
+    total_precipitation: Optional[float] = None
+    avg_humidity: Optional[float] = None
+
+
+class ForecastAccuracyResponse(BaseModel):
+    """Forecast accuracy comparison (predicted vs actual)."""
+    date: str
+    predicted_temp_max: Optional[float] = None
+    actual_temp_max: Optional[float] = None
+    predicted_temp_min: Optional[float] = None
+    actual_temp_min: Optional[float] = None
+    predicted_precipitation: Optional[float] = None
+    actual_precipitation: Optional[float] = None
+    temp_accuracy_pct: Optional[float] = None
+    precip_accuracy_pct: Optional[float] = None
+    overall_accuracy_pct: Optional[float] = None
+
+
 class SatelliteResponse(BaseModel):
     """Satellite analysis response."""
     ndvi_current: Optional[float] = None
@@ -61,6 +94,11 @@ class SatelliteResponse(BaseModel):
     relative_performance: Optional[str] = None
     tile_url: Optional[str] = None
     ndwi_tile_url: Optional[str] = None
+    ndvi_timeline: List[Dict[str, Any]] = []
+    soil_type: Optional[str] = None
+    soil_probabilities: List[List[Any]] = []
+    elevation_m: Optional[float] = None
+    is_mock: bool = False
 
 
 class RAGResultResponse(BaseModel):
