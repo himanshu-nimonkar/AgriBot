@@ -96,7 +96,7 @@ class SatelliteResponse(BaseModel):
     ndwi_tile_url: Optional[str] = None
     ndvi_timeline: List[Dict[str, Any]] = []
     soil_type: Optional[str] = None
-    soil_probabilities: List[List[Any]] = []
+    soil_probabilities: Optional[List[List[Any]]] = []
     elevation_m: Optional[float] = None
     is_mock: bool = False
 
