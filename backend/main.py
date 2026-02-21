@@ -11,9 +11,9 @@ from typing import List, Optional, Set
 from contextlib import asynccontextmanager
 from dataclasses import asdict
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request, Depends
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
 import uvicorn
 import redis.asyncio as redis
 from fastapi_limiter import FastAPILimiter
@@ -59,6 +59,13 @@ try:
     from services.morph_service import morph_service
 except ImportError:
     morph_service = None
+
+# Veo3 / Gemini Vision integration (additive)
+try:
+    from services.veo_service import veo_service
+except ImportError:
+    veo_service = None
+    print("[WARNING] veo_service not available")
 
 
 # ==================
@@ -143,11 +150,7 @@ app = FastAPI(
 # CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173", 
-        "http://localhost:4173",
-        "https://agribot-dashboard.pages.dev"
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -726,9 +729,82 @@ async def websocket_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
 
 
-# ==================
-# Run Server
-# ==================
+# ========================
+# Field Vision (Veo3) API
+# ========================
+
+@app.post("/api/field-vision")
+async def field_vision_start(
+    image: UploadFile = File(...),
+    crop: str = "",
+):
+    """
+    Accept an aerial field image, run Gemini Vision analysis,
+    kick off Veo3 video generation, and return a job_id + instant analytics.
+    """
+    if veo_service is None:
+        raise HTTPException(status_code=503, detail="Field Vision service is not available")
+
+    # Validate file type
+    mime_type = image.content_type or "image/jpeg"
+    if not mime_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image files are accepted")
+
+    # Read image bytes (max 20 MB)
+    MAX_SIZE = 20 * 1024 * 1024
+    image_bytes = await image.read(MAX_SIZE + 1)
+    if len(image_bytes) > MAX_SIZE:
+        raise HTTPException(status_code=413, detail="Image too large (max 20 MB)")
+
+    # Step 1: Gemini Vision analysis
+    analytics = await veo_service.analyze_image(image_bytes, mime_type, crop_hint=crop)
+
+    # Step 2: Kick off Veo video (async background task)
+    job_id, instant_url = await veo_service.generate_video(image_bytes, mime_type, analytics)
+
+    from dataclasses import asdict as dc_asdict
+    return JSONResponse({
+        "job_id": job_id,
+        "status": "ready" if instant_url else "generating",
+        "video_url": instant_url,
+        "analytics": dc_asdict(analytics),
+    })
+
+
+@app.get("/api/field-vision/{job_id}")
+async def field_vision_status(job_id: str):
+    """Poll job status and retrieve video URL once ready."""
+    if veo_service is None:
+        raise HTTPException(status_code=503, detail="Field Vision service not available")
+
+    job = veo_service.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    from dataclasses import asdict as dc_asdict
+    return JSONResponse({
+        "job_id": job_id,
+        "status": job.status,
+        "video_url": job.video_url,
+        "analytics": dc_asdict(job.analytics) if job.analytics else None,
+        "error": job.error,
+    })
+
+
+@app.get("/api/field-vision/video/{job_id}")
+async def field_vision_video(job_id: str):
+    """Serve the generated video file."""
+    if veo_service is None:
+        raise HTTPException(status_code=503, detail="Field Vision service not available")
+
+    path = veo_service.get_video_path(job_id)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Video not found or not yet ready")
+
+    return FileResponse(path, media_type="video/mp4", filename=f"field_vision_{job_id}.mp4")
+
+
+
 
 if __name__ == "__main__":
     uvicorn.run(

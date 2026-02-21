@@ -29,6 +29,7 @@ import IrrigationCalc from './components/IrrigationCalc'
 import BottomNav from './components/BottomNav'
 import AnomalyBadge from './components/AnomalyBadge'
 import WeatherDashboard from './components/WeatherDashboard'
+import FieldVision from './components/FieldVision'
 
 const DegreeDays = lazy(() => import('./components/DegreeDays'))
 
@@ -197,7 +198,7 @@ function App() {
                         zoom: 13
                     })
                 },
-                () => {}
+                () => { }
             )
         }, 600)
     }, [])
@@ -566,10 +567,14 @@ function App() {
                     )}
 
                     {sectionVisible('irrigation') && (
-                        <motion.div variants={cardItem} className="shrink-0 pb-6">
+                        <motion.div variants={cardItem} className="shrink-0">
                             <IrrigationCalc weatherData={weatherData} unitPreference={unitPreference} />
                         </motion.div>
                     )}
+
+                    <motion.div variants={cardItem} className="shrink-0 pb-2">
+                        <FieldVision apiUrl={API_BASE_URL} />
+                    </motion.div>
 
                     {sectionVisible('degreeDays') && (
                         <motion.div variants={cardItem} className="shrink-0 pb-16">
@@ -581,8 +586,9 @@ function App() {
                 </motion.div>
 
                 <div className="lg:hidden flex flex-col gap-3 pb-20">
-                    {mobileTab === 'chat' && (
+                    <div className={mobileTab === 'chat' ? 'contents' : 'hidden'}>
                         <div className="w-full clay-card-static flex flex-col relative h-[calc(100vh-200px)] min-h-[420px] shrink-0 overflow-hidden">
+                            {/* ... same chat content ... */}
                             <div className="pt-3 pb-2.5 px-3 border-b border-black-forest/5 clay-header-gradient flex justify-between items-center shrink-0">
                                 <span className="text-[10px] font-bold text-olive-leaf uppercase tracking-[0.15em]">Agri-Brain</span>
                                 <div className="flex items-center gap-2">
@@ -604,8 +610,6 @@ function App() {
                                     </motion.button>
                                 </div>
                             </div>
-
-
 
                             <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-4 scrollbar-fade bg-cornsilk/20" aria-live="polite" role="log">
                                 {messages.length === 0 && (
@@ -707,9 +711,9 @@ function App() {
                                 </form>
                             </div>
                         </div>
-                    )}
+                    </div>
 
-                    {mobileTab === 'map' && !isDesktop && (
+                    <div className={mobileTab === 'map' && !isDesktop ? 'contents' : 'hidden'}>
                         <div className="h-[calc(100vh-200px)] clay-card-static p-1 overflow-hidden">
                             <ErrorBoundary>
                                 <LiveMap
@@ -724,9 +728,9 @@ function App() {
                                 />
                             </ErrorBoundary>
                         </div>
-                    )}
+                    </div>
 
-                    {mobileTab === 'data' && (
+                    <div className={mobileTab === 'data' ? 'contents' : 'hidden'}>
                         <div className="h-[calc(100vh-200px)] overflow-y-auto pb-4 pr-1 space-y-3 scrollbar-fade">
 
                             {isSatelliteMock && (
@@ -770,9 +774,13 @@ function App() {
                                 apiUrl={API_BASE_URL}
                             />
                         </div>
-                    )}
+                    </div>
 
-                    {/* Settings Tab Removed */}
+                    <div className={mobileTab === 'vision' ? 'contents' : 'hidden'}>
+                        <div className="h-[calc(100vh-200px)] overflow-y-auto pb-4 pr-1 space-y-3 scrollbar-fade">
+                            <FieldVision apiUrl={API_BASE_URL} />
+                        </div>
+                    </div>
                 </div>
 
                 <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[500]">
