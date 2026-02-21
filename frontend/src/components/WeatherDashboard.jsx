@@ -661,9 +661,9 @@ function HistoryTab({ lat = 38.5449, lon = -121.7405, unit = 'metric', toF, toIn
             {error && (
                 <div className="text-center py-8 space-y-2">
                     <p className="text-copperwood text-xs">Failed to load: {error}</p>
-                    <button onClick={() => setError(null)} className="clay-button px-3 py-1.5 text-xs text-olive-leaf inline-flex items-center gap-1.5">
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }} onClick={() => setError(null)} className="clay-button px-3 py-1.5 text-xs text-olive-leaf inline-flex items-center gap-1.5">
                         <RefreshCw size={12} /> Retry
-                    </button>
+                    </motion.button>
                 </div>
             )}
 

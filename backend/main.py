@@ -52,7 +52,10 @@ from services.weather import weather_service
 from services.geospatial import gee_service
 from services.rag import rag_service
 from services.llm import llm_service
+from services.market import MarketService
 import httpx
+
+market_service = MarketService()
 
 # Morph LLM integration (additive)
 try:
@@ -170,6 +173,36 @@ async def health_check():
             "rag": "ok"
         }
     )
+
+
+# ==================
+# API Routers
+# ==================
+try:
+    from routes.yield_api import router as yield_router
+    app.include_router(yield_router, prefix="/api/yield", tags=["yield"])
+except ImportError as e:
+    print(f"[WARNING] Could not load yield router: {e}")
+
+
+try:
+    from routes.startups_api import router as startups_router
+    app.include_router(startups_router, prefix="/api/startups", tags=["startups"])
+except ImportError as e:
+    print(f"[WARNING] Could not load startups router: {e}")
+
+# ==================
+# Market Endpoints
+# ==================
+
+@app.get("/api/market/trends")
+async def get_market_trends():
+    """Get 5-year historical market trends for major crops."""
+    try:
+        data = await market_service.get_historical_trends()
+        return data
+    except Exception as e:
+        return {"error": str(e), "status": "failed"}
 
 
 # ==================

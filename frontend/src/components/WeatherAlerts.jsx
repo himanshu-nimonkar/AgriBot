@@ -114,7 +114,7 @@ function WeatherWarnings({ weatherData, forecast }) {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="fixed inset-0 z-[998]"
+                            className="fixed inset-0 z-[99998]"
                             onClick={() => setIsOpen(false)}
                         />
                         <motion.div
@@ -122,7 +122,7 @@ function WeatherWarnings({ weatherData, forecast }) {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -8, scale: 0.95 }}
                             transition={{ type: 'spring', damping: 22, stiffness: 300 }}
-                            className="absolute top-full right-0 mt-2 w-96 max-w-[92vw] max-h-[60vh] overflow-y-auto clay-card-static p-3 z-[999] space-y-2"
+                            className="fixed top-[84px] lg:top-24 right-4 lg:right-6 w-96 max-w-[92vw] max-h-[60vh] overflow-y-auto clay-card-static p-3 z-[999999] space-y-2"
                         >
                             <div className="flex items-center justify-between mb-1">
                                 <h4 className="text-xs font-bold text-black-forest uppercase tracking-wide flex items-center gap-1.5">

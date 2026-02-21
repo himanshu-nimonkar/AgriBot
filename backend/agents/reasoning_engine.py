@@ -76,6 +76,15 @@ class ReasoningEngine:
                     self.chemicals = json.load(f)
         except Exception as e:
             print(f"Failed to load chemicals: {e}")
+            
+        self.startups = []
+        try:
+            startup_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "yolo_startups.json")
+            if os.path.exists(startup_path):
+                with open(startup_path, "r") as f:
+                    self.startups = json.load(f)
+        except Exception as e:
+            print(f"Failed to load startups: {e}")
     
     async def process_query(self, query: str, lat: Optional[float] = None, lon: Optional[float] = None, crop: Optional[str] = None, session_id: str = "default") -> AgentResponse:
         start_time = datetime.now()
@@ -233,6 +242,10 @@ class ReasoningEngine:
         chemical_data = []
         if "chemical" in question_type or "pest" in question_type or is_regulatory:
             chemical_data = self._lookup_chemicals(query, final_crop)
+            
+        startup_data = []
+        if any(w in query.lower() for w in ["startup", "company", "companies", "service", "provider", "business", "sell", "provide", "who", "local", "agtech"]):
+            startup_data = self._lookup_startups(query)
         
         # Morph: WarpGrep supplementary search (run after parallel fetch, uses 1-3 API calls)
         warpgrep_results = None
@@ -272,6 +285,7 @@ class ReasoningEngine:
             rag_context=combined_rag_context,
             market_context=self._format_market(market_data),
             chemical_context=self._format_chemicals(chemical_data),
+            startup_context=self._format_startups(startup_data),
             history=session.history,
             memory_state={
                 "crop": session.crop,
@@ -340,6 +354,26 @@ class ReasoningEngine:
                 matches.append(chem)
         return matches[:3]
 
+    def _lookup_startups(self, query: str) -> List[Dict]:
+        matches = []
+        q_lower = query.lower()
+        for s in self.startups:
+            score = 0
+            if q_lower in s["name"].lower(): score += 5
+            if q_lower in s["focus"].lower(): score += 3
+            if q_lower in s["description"].lower(): score += 2
+            
+            for word in q_lower.split():
+                if len(word) > 3 and word in s["description"].lower():
+                    score += 1
+            if score > 0:
+                s_copy = dict(s)
+                s_copy["score"] = score
+                matches.append(s_copy)
+                
+        matches.sort(key=lambda x: x["score"], reverse=True)
+        return matches[:3]
+
     def _format_weather(self, w: WeatherData) -> str:
         if not w: return "Weather unavailable."
         
@@ -380,5 +414,9 @@ class ReasoningEngine:
     def _format_chemicals(self, chems: List[Dict]) -> str:
         if not chems: return "No chemicals found."
         return "\\n".join([f"- {c['product_name']} ({c['active_ingredient']}) Rate: {c['rate']} REI: {c['rei']}" for c in chems])
+
+    def _format_startups(self, startups: List[Dict]) -> str:
+        if not startups: return "No relevant local startups found."
+        return "\\n".join([f"- {s['name']} (City: {s['city']}, Focus: {s['focus']}): {s['description']}" for s in startups])
 
 reasoning_engine = ReasoningEngine()

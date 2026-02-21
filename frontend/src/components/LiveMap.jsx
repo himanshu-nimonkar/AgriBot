@@ -138,21 +138,21 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
     }
     const ndviColor = getNDVIColor(satelliteData?.ndvi_current)
 
-    // Dynamic color for overlays based on type
     const getLayerStyle = (type) => {
+        if (!type) return { color: 'transparent', fillColor: 'transparent', fillOpacity: 0 };
         switch(type) {
             case 'ndvi': return { color: ndviColor, fillColor: ndviColor, fillOpacity: 0.4 }
             case 'moisture': return { color: '#0077b6', fillColor: '#0077b6', fillOpacity: 0.3 }
             case 'soil': return { color: '#bc6c25', fillColor: '#bc6c25', fillOpacity: 0.35 }
             case 'elevation': return { color: '#582f0e', fillColor: '#582f0e', fillOpacity: 0.1 } // Just stroke mainly
-            default: return { color: '#606c38', fillOpacity: 0.2 }
+            default: return { color: 'transparent', fillOpacity: 0 }
         }
     }
 
     const currentStyle = getLayerStyle(activeLayer)
 
     return (
-        <div className="relative w-full h-full z-0 group">
+        <div className="relative w-full h-full z-0">
              {/* Map Instance */}
             <MapContainer
                 center={position}
@@ -223,8 +223,12 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
                                     {activeLayer === 'moisture' && <p>Status: <span className="text-blue-600 font-bold">{satelliteData?.water_stress_level || 'Adequate'}</span></p>}
                                     {activeLayer === 'soil' && (
                                         <>
-                                            <p>Type: <span className="font-bold text-copperwood">Silty Loam</span></p>
-                                            <p>pH Level: 6.8 (Neutral)</p>
+                                            <p>Type: <span className="font-bold text-copperwood uppercase">{satelliteData?.soil_type || 'Unknown Soil Type'}</span></p>
+                                            <p>Dominant Probability: <span className="font-bold">
+                                                {satelliteData?.soil_probabilities && satelliteData.soil_probabilities.length > 0 
+                                                    ? `${(satelliteData.soil_probabilities[0][1] * 100).toFixed(1)}%` 
+                                                    : 'N/A'}
+                                            </span></p>
                                         </>
                                     )}
                                     {activeLayer === 'elevation' && <p>Avg Elevation: <span className="font-bold">42m</span></p>}

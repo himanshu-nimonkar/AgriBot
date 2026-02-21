@@ -91,6 +91,7 @@ class CloudflareLLMService:
         economic_context: Optional[str] = None,
         market_context: Optional[str] = None,
         chemical_context: Optional[str] = None,
+        startup_context: Optional[str] = None,
         history: List[Dict] = [],
         memory_state: Optional[Dict] = None
     ) -> LLMResponse:
@@ -128,7 +129,8 @@ CRITICAL RULES:
    - "Where in Yolo?": Recommend specific zones (e.g. "Capay Valley for organic...", "Clarksburg for grapes...") based on RAG knowledge.
    - "When to plant/harvest?": Use GDD and current soil moisture data to justify the timing.
 4. Voice summary should feel like you're speaking directly to the grower, not as a generic AI.
-5. DO NOT hallucinate. DO NOT REPLY WRONG ANSWERS INSTEAD ADMIT YOU DONT KNOW. 
+5. If the User asks for local startups, companies, or services (e.g., "suggest me companies", "who sells...", "which startup..."), carefully check the LOCAL STARTUPS context and recommend the top matches.
+6. DO NOT hallucinate. DO NOT REPLY WRONG ANSWERS INSTEAD ADMIT YOU DONT KNOW. 
 """
 
         # Format history (last 8 turns for better memory)
@@ -183,6 +185,9 @@ RESEARCH (Guidelines):
 
 ECONOMIC:
 {economic_context or 'N/A'}
+
+LOCAL STARTUPS (Yolo County):
+{startup_context or 'N/A'}
 """
 
         try:
@@ -406,12 +411,13 @@ async def generate_response(
     economic: Optional[str] = None,
     market: Optional[str] = None,
     chemical: Optional[str] = None,
+    startup: Optional[str] = None,
     history: List[Dict] = [],
     memory_state: Optional[Dict] = None
 ) -> LLMResponse:
     """Convenience function for agricultural response generation."""
     return await llm_service.generate_agricultural_response(
-        query, crop, weather, satellite, rag, economic, market, chemical, history, memory_state
+        query, crop, weather, satellite, rag, economic, market, chemical, startup, history, memory_state
     )
 
 

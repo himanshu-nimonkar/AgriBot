@@ -463,15 +463,9 @@ class MorphService:
                             fpath = os.path.join(root, fname)
                             rel_path = os.path.relpath(fpath, os.path.dirname(os.path.dirname(__file__)))
                             
-                            # Handle PDF files
+                            # Handle PDF files - Skip them as they are now in Cloudflare Vectorize
                             if fname.lower().endswith('.pdf'):
-                                try:
-                                    pdf_text = self._read_pdf_text(fpath)
-                                    for i, line in enumerate(pdf_text.split('\n'), 1):
-                                        if pattern.lower() in line.lower():
-                                            results.append(f"{rel_path}:{i}: {line.strip()}")
-                                except Exception:
-                                    pass
+                                continue
                             # Handle text files
                             elif fname.lower().endswith(('.txt', '.md', '.json', '.csv')):
                                 try:
@@ -497,9 +491,7 @@ class MorphService:
                     end = args.get("end_line", start + 50)
                     
                     if file_path.lower().endswith('.pdf'):
-                        text = self._read_pdf_text(full_path)
-                        lines = text.split('\n')
-                        return "\n".join(lines[start:end])
+                        return "[Error: PDF files are stored in Vectorize and cannot be read line-by-line via WarpGrep. Skip reading PDFs.]"
                     else:
                         with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
                             lines = f.readlines()

@@ -29,6 +29,9 @@ import IrrigationCalc from './components/IrrigationCalc'
 import BottomNav from './components/BottomNav'
 import AnomalyBadge from './components/AnomalyBadge'
 import WeatherDashboard from './components/WeatherDashboard'
+import YieldPrediction from './components/YieldPrediction'
+import StartupRecommender from './components/StartupRecommender'
+import MarketTrends from './components/MarketTrends'
 
 const DegreeDays = lazy(() => import('./components/DegreeDays'))
 
@@ -54,7 +57,7 @@ const getApiBaseUrl = () => {
         }
     }
 
-    return import.meta.env.VITE_API_URL || 'https://waterproof-hand-andrew-segments.trycloudflare.com'
+    return import.meta.env.VITE_API_URL || 'http://localhost:8000'
 }
 
 const API_BASE_URL = getApiBaseUrl()
@@ -152,6 +155,25 @@ function App() {
 
     const chatEndRef = useRef(null)
     const mobileChatEndRef = useRef(null)
+
+    const pageVariants = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+        }
+    };
+    const cardStagger = {
+        hidden: { opacity: 0, y: 20 },
+        show: {
+            opacity: 1, y: 0,
+            transition: { staggerChildren: 0.08, delayChildren: 0.15 }
+        }
+    };
+    const cardItem = {
+        hidden: { opacity: 0, y: 30, scale: 0.95 },
+        show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 300, damping: 24 } }
+    };
 
     useEffect(() => {
         localStorage.setItem('ag_unit', unitPreference)
@@ -503,7 +525,7 @@ function App() {
                 <span className="font-mono">v2.1.0</span>
             </footer>
 
-            <div className="w-full flex-none z-50 p-4 pb-0">
+            <div className="w-full flex-none z-[9999] relative p-4 pb-0">
                 <Navbar
                     connectionStatus={isConnected ? 'connected' : 'disconnected'}
                     onCallClick={() => setIsCallModalOpen(true)}
@@ -516,9 +538,13 @@ function App() {
                 />
             </div>
 
-            <main className="relative z-10 flex-1 min-h-0 w-full max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 overflow-y-auto lg:overflow-hidden pb-12" role="main">
+            <motion.main 
+                variants={pageVariants}
+                initial="hidden"
+                animate="show"
+                className="relative z-10 flex-1 min-h-0 w-full max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 overflow-y-auto lg:overflow-hidden pb-12" role="main">
                 <motion.div
-                    variants={cardStagger}
+                    variants={pageVariants}
                     initial="hidden"
                     animate="show"
                     className="hidden lg:flex lg:col-span-7 flex-col gap-4 h-full overflow-y-auto scrollbar-fade pr-2 pb-16"
@@ -561,6 +587,18 @@ function App() {
                         </motion.div>
                     )}
 
+                    <motion.div variants={cardItem} className="shrink-0 mb-2">
+                        <YieldPrediction satelliteData={satelliteData} weatherData={weatherData} apiUrl={API_BASE_URL} />
+                    </motion.div>
+
+                    <motion.div variants={cardItem} className="shrink-0 mb-4">
+                        <StartupRecommender apiUrl={API_BASE_URL} />
+                    </motion.div>
+
+                    <motion.div variants={cardItem} className="shrink-0 mb-4">
+                        <MarketTrends apiUrl={API_BASE_URL} />
+                    </motion.div>
+
                     {sectionVisible('anomaly') && weatherData && (
                         <AnomalyBadge weatherData={weatherData} isDesktop />
                     )}
@@ -580,7 +618,13 @@ function App() {
                     )}
                 </motion.div>
 
-                <div className="lg:hidden flex flex-col gap-3 pb-20">
+                {/* --- MOBILE CONTENT: Scrollable Stack --- */}
+                <motion.div 
+                    variants={pageVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="lg:hidden flex flex-col gap-4 pb-20 w-full max-w-full overflow-x-hidden pt-2"
+                >
                     {mobileTab === 'chat' && (
                         <div className="w-full clay-card-static flex flex-col relative h-[calc(100vh-200px)] min-h-[420px] shrink-0 overflow-hidden">
                             <div className="pt-3 pb-2.5 px-3 border-b border-black-forest/5 clay-header-gradient flex justify-between items-center shrink-0">
@@ -609,10 +653,11 @@ function App() {
 
                             <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-4 scrollbar-fade bg-cornsilk/20" aria-live="polite" role="log">
                                 {messages.length === 0 && (
-                                    <div className="flex flex-col items-center justify-center h-full text-center text-black-forest/40">
-                                        <Wheat size={28} className="text-olive-leaf/50 mb-3" strokeWidth={1.5} />
-                                        <p className="font-medium text-black-forest/60 text-sm">Ask about your field</p>
-                                        <p className="text-[10px] mt-1 text-black-forest/35">{location?.label || 'Select a location on the map'}</p>
+                                    <div className="flex flex-col items-center justify-center h-full text-center text-black-forest/40 pt-6">
+                                        <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-black-forest to-olive-leaf flex items-center justify-center gap-2 mb-2">
+                                            <Wheat className="w-6 h-6 text-olive-leaf" strokeWidth={1.5} /> Ask about your field
+                                        </h2>
+                                        <p className="text-[10px] text-black-forest/35">{location?.label || 'Select a location on the map'}</p>
                                         <div className="mt-4 w-full max-w-[300px]">
                                             <QuickActions
                                                 location={location}
@@ -699,7 +744,7 @@ function App() {
                                         whileTap={{ scale: 0.9 }}
                                         type="submit"
                                         disabled={isThinking || !query.trim()}
-                                        className="shrink-0 w-10 h-10 flex items-center justify-center clay-primary text-white rounded-xl shadow-clay-sm disabled:opacity-50"
+                                        className="shrink-0 w-10 h-10 flex items-center justify-center clay-primary btn-liquid text-white rounded-xl shadow-clay-sm disabled:opacity-50"
                                         aria-label="Send message"
                                     >
                                         {isThinking ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
@@ -747,6 +792,10 @@ function App() {
                                     onUnitChange={setUnitPreference}
                                 />
                             )}
+                            
+                            <YieldPrediction satelliteData={satelliteData} weatherData={weatherData} apiUrl={API_BASE_URL} />
+                            
+                            <StartupRecommender apiUrl={API_BASE_URL} />
 
                             {sectionVisible('anomaly') && weatherData && (
                                 <AnomalyBadge weatherData={weatherData} />
@@ -773,7 +822,7 @@ function App() {
                     )}
 
                     {/* Settings Tab Removed */}
-                </div>
+                </motion.div>
 
                 <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[500]">
                     <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
@@ -784,7 +833,7 @@ function App() {
                     initial="hidden"
                     animate="show"
                     className="hidden lg:flex lg:col-span-5 flex-col gap-4 overflow-hidden"
-                    style={{ height: 'calc(100vh - 150px)' }}
+                    style={{ height: 'calc(100vh - 120px)' }}
                 >
                     <motion.div variants={cardItem} className="flex-1 clay-card-static flex flex-col relative min-h-0 overflow-hidden">
                         <div className="pt-3 pb-2.5 px-4 border-b border-black-forest/5 clay-header-gradient flex justify-between items-center shrink-0 z-20 relative">
@@ -822,10 +871,9 @@ function App() {
                                     <div className="w-16 h-16 rounded-2xl clay-card-sm flex items-center justify-center overflow-hidden p-2">
                                         <img src="/AgriBot.png" alt="AgriBot" className="w-full h-full object-contain" />
                                     </div>
-                                    <div>
-                                        <p className="font-medium text-black-forest/65">Agri-Brain Ready</p>
-                                        <p className="text-xs mt-1 text-black-forest/35">Point-aware responses for this map location.</p>
-                                    </div>
+                                        <h2 className="text-xl lg:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-black-forest to-olive-leaf flex items-center justify-center gap-2">
+                                        <Wheat className="w-6 h-6 lg:w-8 lg:h-8 text-olive-leaf" /> Ask about your field
+                                    </h2>
                                     <div className="w-full max-w-[360px] pb-10">
                                         <QuickActions
                                             location={location}
@@ -923,7 +971,7 @@ function App() {
                                     whileTap={{ scale: 0.95 }}
                                     type="submit"
                                     disabled={isThinking || !query.trim()}
-                                    className="shrink-0 w-12 h-12 flex items-center justify-center clay-primary rounded-xl shadow-clay-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="shrink-0 w-12 h-12 flex items-center justify-center clay-primary btn-liquid rounded-xl shadow-clay-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                     aria-label="Send message"
                                 >
                                     {isThinking ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
@@ -942,7 +990,7 @@ function App() {
                         />
                     </motion.div>
                 </motion.div>
-            </main>
+            </motion.main>
 
             <SessionModal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)} onConfirm={handleResetConfirm} />
             <CallModal isOpen={isCallModalOpen} onClose={() => setIsCallModalOpen(false)} onShowToast={showToast} />
