@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion'
-import { Map, MessageCircle, BarChart3, Settings } from 'lucide-react'
+import { Map, MessageCircle, BarChart3, Settings, Wheat } from 'lucide-react'
 
 const tabs = [
     { id: 'chat', label: 'Chat', icon: MessageCircle },
     { id: 'map', label: 'Map', icon: Map },
     { id: 'data', label: 'Data', icon: BarChart3 },
+    { id: 'vision', label: 'Vision', icon: Wheat },
 ]
 
 function BottomNav({ activeTab = 'chat', onTabChange }) {
@@ -21,9 +22,8 @@ function BottomNav({ activeTab = 'chat', onTabChange }) {
                                 if (navigator.vibrate) navigator.vibrate(5)
                                 onTabChange(tab.id)
                             }}
-                            className={`flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl transition-all ${
-                                isActive ? 'text-olive-leaf' : 'text-black-forest/30'
-                            }`}
+                            className={`flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl transition-all ${isActive ? 'text-olive-leaf' : 'text-black-forest/30'
+                                }`}
                             aria-label={tab.label}
                             aria-current={isActive ? 'page' : undefined}
                         >
