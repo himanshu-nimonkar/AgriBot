@@ -52,17 +52,27 @@ const getApiBaseUrl = () => {
     let override = params.get('api_url')
 
     if (override) {
-        // If it doesn't start with http/https, assume https (most common for tunnels)
+        // If it doesn't start with http/https, assume https
         if (!override.startsWith('http')) {
             override = 'https://' + override
         }
 
         try {
             const parsed = new URL(override)
-            return parsed.origin + parsed.pathname.replace(/\/+$/, '')
+            const finalUrl = parsed.origin + parsed.pathname.replace(/\/+$/, '')
+            // Cache the explicitly passed URL for PWA standalone launches
+            localStorage.setItem('ag_api_url', finalUrl)
+            return finalUrl
         } catch {
             console.warn('Invalid api_url parameter, using default')
         }
+    }
+
+    // PWA Launch Fallback: If no URL param exists, check if we saved one previously
+    const cachedUrl = localStorage.getItem('ag_api_url')
+    if (cachedUrl) {
+        console.log('[AgriBot] Retrieved API URL from PWA cache:', cachedUrl)
+        return cachedUrl
     }
 
     return import.meta.env.VITE_API_URL || 'http://localhost:8000'
