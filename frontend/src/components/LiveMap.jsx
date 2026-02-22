@@ -130,6 +130,13 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
     
     const [position, setPosition] = useState([defaultLat, defaultLon])
     const [isMapReady, setIsMapReady] = useState(false)
+    const [isComponentReady, setIsComponentReady] = useState(false)
+    
+    useEffect(() => {
+        // Delay mount by one tick to ensure props are stable
+        const timer = setTimeout(() => setIsComponentReady(true), 50);
+        return () => clearTimeout(timer);
+    }, []);
 
     // Sync incoming valid locations to state - removed duplicate useEffect
 
@@ -212,6 +219,16 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
     }
 
     const currentStyle = getLayerStyle(activeLayer)
+
+    if (!isComponentReady || isNaN(safeLat) || isNaN(safeLon)) {
+        return (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-black-forest/5 p-4 text-center">
+                 <Globe className="w-8 h-8 text-olive-leaf/40 mb-2 animate-pulse" />
+                 <p className="text-sm font-semibold text-black-forest/60">Awaiting GPS telemetry...</p>
+                 <p className="text-[10px] text-black-forest/40 mt-1 uppercase tracking-widest ont-mono">Initializing Signal</p>
+            </div>
+        )
+    }
 
     return (
         <div className="relative w-full h-full z-0">
