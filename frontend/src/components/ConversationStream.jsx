@@ -165,7 +165,7 @@ function ConversationStream({ messages, isThinking }) {
             {/* Voice Call Info */}
             <div className="mt-4 pt-4 border-t border-black-forest/10">
                 <div className="flex items-center justify-between text-xs text-black-forest/40">
-                    <span className="flex items-center gap-1.5"><Phone size={12} strokeWidth={1.5} /> Voice: +1 (530) 508-3120</span>
+                    <span className="flex items-center gap-1.5"><Phone size={12} strokeWidth={1.5} /> Voice: +1 (530) 508-3132</span>
                     <span>Powered by Vapi.ai</span>
                 </div>
             </div>
