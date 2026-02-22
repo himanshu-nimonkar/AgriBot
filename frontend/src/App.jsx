@@ -10,8 +10,7 @@ import {
     Mic,
     MicOff,
     Download,
-    Wheat,
-    Globe
+    Wheat
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import DOMPurify from 'dompurify'
@@ -624,23 +623,16 @@ function App() {
                                 {sectionVisible('map') && isDesktop && (
                                     <motion.div variants={cardItem} className="clay-card-static p-1.5 overflow-hidden h-[420px] shrink-0 relative">
                                         <ErrorBoundary fallback={<div className="flex items-center justify-center h-full text-black-forest/40">Map Unavailable</div>}>
-                                            {location && !isNaN(parseFloat(location.lat)) && !isNaN(parseFloat(location.lon)) ? (
-                                                <LiveMap
-                                                    location={location}
-                                                    setLocation={setLocation}
-                                                    satelliteData={satelliteData}
-                                                    activeLayer={activeMapLayer}
-                                                    onActiveLayerChange={setActiveMapLayer}
-                                                    onNdviPointChange={setSelectedNdviPoint}
-                                                    onLocateMe={handleLocateMe}
-                                                    layerSummary={layerSummary}
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex flex-col items-center justify-center bg-black-forest/5 p-4 text-center">
-                                                    <Globe className="w-8 h-8 text-olive-leaf/40 mb-2 animate-pulse" />
-                                                    <p className="text-sm font-semibold text-black-forest/60">Awaiting GPS telemetry...</p>
-                                                </div>
-                                            )}
+                                            <LiveMap
+                                                location={location}
+                                                setLocation={setLocation}
+                                                satelliteData={satelliteData}
+                                                activeLayer={activeMapLayer}
+                                                onActiveLayerChange={setActiveMapLayer}
+                                                onNdviPointChange={setSelectedNdviPoint}
+                                                onLocateMe={handleLocateMe}
+                                                layerSummary={layerSummary}
+                                            />
                                         </ErrorBoundary>
                                     </motion.div>
                                 )}
@@ -831,33 +823,24 @@ function App() {
                                 </div>
                             </div>
 
-                            {mobileTab === 'map' && !isDesktop && (
-                                <div className="contents">
-                                    <div className="h-[calc(100vh-200px)] clay-card-static p-1 overflow-hidden">
-                                        <Suspense fallback={<LoadingScreen />}>
-                                            <ErrorBoundary>
-                                                {location && !isNaN(parseFloat(location.lat)) && !isNaN(parseFloat(location.lon)) ? (
-                                                    <LiveMap
-                                                        location={location}
-                                                        setLocation={setLocation}
-                                                        satelliteData={satelliteData}
-                                                        activeLayer={activeMapLayer}
-                                                        onActiveLayerChange={setActiveMapLayer}
-                                                        onNdviPointChange={setSelectedNdviPoint}
-                                                        onLocateMe={handleLocateMe}
-                                                        layerSummary={layerSummary}
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex flex-col items-center justify-center bg-black-forest/5 p-4 text-center">
-                                                        <Globe className="w-8 h-8 text-olive-leaf/40 mb-2 animate-pulse" />
-                                                        <p className="text-sm font-semibold text-black-forest/60 text-white/60">Waiting for coordinates...</p>
-                                                    </div>
-                                                )}
-                                            </ErrorBoundary>
-                                        </Suspense>
-                                    </div>
+                            <div className={mobileTab === 'map' && !isDesktop ? 'contents' : 'hidden'}>
+                                <div className="h-[calc(100vh-200px)] clay-card-static p-1 overflow-hidden">
+                                    <Suspense fallback={<LoadingScreen />}>
+                                        <ErrorBoundary>
+                                            <LiveMap
+                                                location={location}
+                                                setLocation={setLocation}
+                                                satelliteData={satelliteData}
+                                                activeLayer={activeMapLayer}
+                                                onActiveLayerChange={setActiveMapLayer}
+                                                onNdviPointChange={setSelectedNdviPoint}
+                                                onLocateMe={handleLocateMe}
+                                                layerSummary={layerSummary}
+                                            />
+                                        </ErrorBoundary>
+                                    </Suspense>
                                 </div>
-                            )}
+                            </div>
 
                             <div className={mobileTab === 'data' ? 'contents' : 'hidden'}>
                                 <div className="h-[calc(100vh-200px)] overflow-y-auto pb-4 pr-1 space-y-3 scrollbar-fade">

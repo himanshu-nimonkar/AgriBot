@@ -20,27 +20,10 @@ function LocationMarker({ position, setPosition }) {
 
     useEffect(() => {
         if (position && Array.isArray(position) && position.length >= 2) {
-            const lat = parseFloat(position[0]);
-            const lon = parseFloat(position[1]);
-            
+            const lat = Number(position[0]);
+            const lon = Number(position[1]);
             if (!isNaN(lat) && !isNaN(lon)) {
-                try {
-                    // Check if we already are at this position to avoid redundant flyTo
-                    const currentCenter = map.getCenter();
-                    const dist = Math.abs(currentCenter.lat - lat) + Math.abs(currentCenter.lng - lon);
-                    
-                    if (dist > 0.0001) {
-                        if (canAnimate) {
-                            console.log(`[Map] Flying to: ${lat}, ${lon}`);
-                            map.flyTo([lat, lon], 16, { duration: 1.5 });
-                        } else {
-                            console.log(`[Map] Snapping to (no animation): ${lat}, ${lon}`);
-                            map.setView([lat, lon], 16);
-                        }
-                    }
-                } catch (err) {
-                    console.warn('[Map] flyTo/setView failed:', err);
-                }
+                map.flyTo([lat, lon], 16, { duration: 1.5 })
             }
         }
     }, [position, map])
@@ -121,6 +104,15 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
     const safeLat = parseFloat(location?.lat);
     const safeLon = parseFloat(location?.lon);
 
+    useEffect(() => {
+        if (isNaN(safeLat) || isNaN(safeLon)) {
+            const timer = setTimeout(() => {
+                if (onLocateMe) onLocateMe();
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [safeLat, safeLon, onLocateMe]);
+
     if (isNaN(safeLat) || isNaN(safeLon)) {
         return (
             <div className="w-full h-full flex flex-col items-center justify-center bg-black-forest/5 rounded-2xl border-2 border-dashed border-black-forest/10 p-4 text-center">
@@ -134,31 +126,14 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
     const defaultLat = !isNaN(safeLat) ? safeLat : 38.5449;
     const defaultLon = !isNaN(safeLon) ? safeLon : -121.7405;
     
-    const [position, setPosition] = useState([defaultLat, defaultLon])
-    const [isMapReady, setIsMapReady] = useState(false)
-    const [isComponentReady, setIsComponentReady] = useState(false)
-    const [canAnimate, setCanAnimate] = useState(false)
-    
-    useEffect(() => {
-        // Delay mount by one tick to ensure props are stable
-        const mountTimer = setTimeout(() => setIsComponentReady(true), 50);
-        // Delay animations to ensure Leaflet is fully stable
-        const animateTimer = setTimeout(() => setCanAnimate(true), 2000);
-        return () => {
-            clearTimeout(mountTimer);
-            clearTimeout(animateTimer);
-        };
-    }, []);
+    const [position, setPosition] = useState([defaultLat, defaultLon]) 
 
     // Sync incoming valid locations to state - removed duplicate useEffect
 
     // BOUNDARY CALCULATION: Create a rectangle around the center
     const fieldBounds = useMemo(() => {
-        const lat = parseFloat(position?.[0])
-        const lon = parseFloat(position?.[1])
-        
-        if (isNaN(lat) || isNaN(lon)) return null;
-
+        const lat = position[0]
+        const lon = position[1]
         // Approx 1km box
         return [
             [lat - 0.0045, lon - 0.0055], // SouthWest
@@ -232,30 +207,15 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
 
     const currentStyle = getLayerStyle(activeLayer)
 
-    if (!isComponentReady || isNaN(safeLat) || isNaN(safeLon)) {
-        return (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-black-forest/5 p-4 text-center">
-                 <Globe className="w-8 h-8 text-olive-leaf/40 mb-2 animate-pulse" />
-                 <p className="text-sm font-semibold text-black-forest/60">Awaiting GPS telemetry...</p>
-                 <p className="text-[10px] text-black-forest/40 mt-1 uppercase tracking-widest ont-mono">Initializing Signal</p>
-            </div>
-        )
-    }
-
     return (
         <div className="relative w-full h-full z-0">
              {/* Map Instance */}
             <MapContainer
-                key={`map-${validCenter[0]}-${validCenter[1]}`}
                 center={validCenter}
                 zoom={15}
-                scrollWheelZoom={false}
+                scrollWheelZoom={false} // Better for page scroll
                 style={{ height: '100%', width: '100%', background: 'transparent' }}
-                zoomControl={false}
-                whenReady={() => {
-                    console.log('[Map] Container ready');
-                    setIsMapReady(true);
-                }}
+                zoomControl={false} // Move zoom control if needed, or stick to default position
             >
                 {/* 1. Base Tile Layer */}
                 <TileLayer
@@ -264,82 +224,78 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
                     className="map-tiles-filter" // Apply CSS filter for softer look if defined in index.css
                 />
 
-                {/* Only render overlays once map is ready and we have valid coords */}
-                {isMapReady && (
-                    <>
-                        {/* 2. Elevation Topo Layer Toggle */}
-                        {activeLayer === 'elevation' && (
-                            <TileLayer
-                                attribution='&copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
-                                url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
-                                opacity={0.7}
-                            />
-                        )}
-
-                        {/* 3. Satellite Data Tile Layers (Restored) */}
-                        {activeLayer === 'ndvi' && satelliteData?.tile_url && (
-                            <TileLayer
-                                key={`ndvi-${satelliteData.tile_url}`}
-                                url={satelliteData.tile_url}
-                                opacity={0.7}
-                                zIndex={100}
-                            />
-                        )}
-                        {activeLayer === 'moisture' && satelliteData?.ndwi_tile_url && (
-                            <TileLayer
-                                key={`ndwi-${satelliteData.ndwi_tile_url}`}
-                                url={satelliteData.ndwi_tile_url}
-                                opacity={0.7}
-                                zIndex={100}
-                            />
-                        )}
-
-                        {/* 4. Field Boundary Rectangle (Fallback) */}
-                        {fieldBounds && ((activeLayer === 'ndvi' && !satelliteData?.tile_url) || 
-                          (activeLayer === 'moisture' && !satelliteData?.ndwi_tile_url) || 
-                          activeLayer === 'soil' || activeLayer === 'elevation') && (
-                            <Rectangle
-                                bounds={fieldBounds}
-                                pathOptions={{
-                                    color: currentStyle.color,
-                                    weight: 2,
-                                    fillColor: currentStyle.fillColor,
-                                    fillOpacity: currentStyle.fillOpacity,
-                                    dashArray: activeLayer === 'elevation' ? '5, 5' : null
-                                }}
-                            >
-                                <Popup className="clay-popup">
-                                     <div className="p-1">
-                                         <h4 className="font-bold text-black-forest text-xs uppercase mb-1">
-                                             {activeLayer === 'ndvi' && 'Vegetation Index (NDVI)'}
-                                             {activeLayer === 'moisture' && 'Water Stress Analysis'}
-                                             {activeLayer === 'soil' && 'Soil Composition'}
-                                             {activeLayer === 'elevation' && 'Topography'}
-                                         </h4>
-                                         <div className="text-[10px] text-black-forest/70 space-y-1">
-                                            {activeLayer === 'ndvi' && <p>Value: <span className="font-bold">{satelliteData?.ndvi_current?.toFixed(2) ?? '0.00'}</span></p>}
-                                            {activeLayer === 'moisture' && <p>Status: <span className="text-blue-600 font-bold">{satelliteData?.water_stress_level || 'Adequate'}</span></p>}
-                                            {activeLayer === 'soil' && (
-                                                <>
-                                                    <p>Type: <span className="font-bold text-copperwood uppercase">{satelliteData?.soil_type || 'Unknown Soil Type'}</span></p>
-                                                    <p>Dominant Probability: <span className="font-bold">
-                                                        {satelliteData?.soil_probabilities && satelliteData.soil_probabilities.length > 0 
-                                                            ? `${(satelliteData.soil_probabilities[0][1] * 100).toFixed(1)}%` 
-                                                            : 'N/A'}
-                                                    </span></p>
-                                                </>
-                                            )}
-                                            {activeLayer === 'elevation' && <p>Avg Elevation: <span className="font-bold">42m</span></p>}
-                                         </div>
-                                     </div>
-                                </Popup>
-                            </Rectangle>
-                        )}
-
-                        <LocationMarker position={position} setPosition={setPosition} />
-                        <LatLonDisplay position={position} />
-                    </>
+                {/* 2. Elevation Topo Layer Toggle */}
+                {activeLayer === 'elevation' && (
+                    <TileLayer
+                        attribution='&copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
+                        url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+                        opacity={0.7}
+                    />
                 )}
+
+                {/* 3. Satellite Data Tile Layers (Restored) */}
+                {activeLayer === 'ndvi' && satelliteData?.tile_url && (
+                    <TileLayer
+                        key={`ndvi-${satelliteData.tile_url}`}
+                        url={satelliteData.tile_url}
+                        opacity={0.7}
+                        zIndex={100}
+                    />
+                )}
+                {activeLayer === 'moisture' && satelliteData?.ndwi_tile_url && (
+                    <TileLayer
+                        key={`ndwi-${satelliteData.ndwi_tile_url}`}
+                        url={satelliteData.ndwi_tile_url}
+                        opacity={0.7}
+                        zIndex={100}
+                    />
+                )}
+
+                {/* 4. Field Boundary Rectangle (Fallback) */}
+                {/* Shows if specific satellite tiles aren't available but layer is active */}
+                {((activeLayer === 'ndvi' && !satelliteData?.tile_url) || 
+                  (activeLayer === 'moisture' && !satelliteData?.ndwi_tile_url) || 
+                  activeLayer === 'soil' || activeLayer === 'elevation') && (
+                    <Rectangle
+                        bounds={fieldBounds}
+                        pathOptions={{
+                            color: currentStyle.color,
+                            weight: 2,
+                            fillColor: currentStyle.fillColor,
+                            fillOpacity: currentStyle.fillOpacity,
+                            dashArray: activeLayer === 'elevation' ? '5, 5' : null
+                        }}
+                    >
+                        <Popup className="clay-popup">
+                             <div className="p-1">
+                                 <h4 className="font-bold text-black-forest text-xs uppercase mb-1">
+                                     {activeLayer === 'ndvi' && 'Vegetation Index (NDVI)'}
+                                     {activeLayer === 'moisture' && 'Water Stress Analysis'}
+                                     {activeLayer === 'soil' && 'Soil Composition'}
+                                     {activeLayer === 'elevation' && 'Topography'}
+                                 </h4>
+                                 <div className="text-[10px] text-black-forest/70 space-y-1">
+                                    {activeLayer === 'ndvi' && <p>Value: <span className="font-bold">{satelliteData?.ndvi_current?.toFixed(2) ?? '0.00'}</span></p>}
+                                    {activeLayer === 'moisture' && <p>Status: <span className="text-blue-600 font-bold">{satelliteData?.water_stress_level || 'Adequate'}</span></p>}
+                                    {activeLayer === 'soil' && (
+                                        <>
+                                            <p>Type: <span className="font-bold text-copperwood uppercase">{satelliteData?.soil_type || 'Unknown Soil Type'}</span></p>
+                                            <p>Dominant Probability: <span className="font-bold">
+                                                {satelliteData?.soil_probabilities && satelliteData.soil_probabilities.length > 0 
+                                                    ? `${(satelliteData.soil_probabilities[0][1] * 100).toFixed(1)}%` 
+                                                    : 'N/A'}
+                                            </span></p>
+                                        </>
+                                    )}
+                                    {activeLayer === 'elevation' && <p>Avg Elevation: <span className="font-bold">42m</span></p>}
+                                 </div>
+                             </div>
+                        </Popup>
+                    </Rectangle>
+                )}
+
+                <LocationMarker position={position} setPosition={setPosition} />
+                <LatLonDisplay position={position} />
                 <CustomMapControls onLocate={handleLocate} />
 
             </MapContainer>

@@ -54,6 +54,8 @@ export default function StartupRecommender({ apiUrl }) {
                             Local AgTech Startups
                         </h3>
                         <p className="text-[10px] text-black-forest/50 font-medium mt-0.5 tracking-wide">YOLO COUNTY CONNECTION ENGINE</p>
+                        <p className="text-[10px] text-black-forest/60 mt-0.5 leading-snug max-w-[220px] hidden lg:block">Connects you with local Yolo County equipment, software, and consulting services.</p>
+                        <p className="text-[9px] text-black-forest/60 mt-0.5 leading-snug lg:hidden">Local services & equipment connections.</p>
                     </div>
                 </div>
                 <div className="flex flex-col justify-center h-full">

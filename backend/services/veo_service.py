@@ -98,7 +98,7 @@ class VeoService:
     # ── Initialisation ──────────────────────────────────────────
 
     def _get_client(self):
-        """Lazily initialise the google-genai client."""
+        """Lazily initialise the google-genai client for standard Vision."""
         if self._client is not None:
             return self._client
         api_key = settings.gemini_api_key
@@ -107,13 +107,31 @@ class VeoService:
         try:
             from google import genai  # type: ignore
             self._client = genai.Client(api_key=api_key)
-            print("[SUCCESS] Gemini/Veo client initialized")
+            print("[SUCCESS] Gemini Vision client initialized")
             return self._client
         except ImportError:
             print("[WARNING] google-genai not installed — pip install google-genai")
             return None
         except Exception as exc:
             print(f"[WARNING] Gemini client init failed: {exc}")
+            return None
+
+    def _get_veo_client(self):
+        """Lazily initialise the google-genai client specifically for Veo generation."""
+        if hasattr(self, '_veo_client') and self._veo_client is not None:
+            return self._veo_client
+            
+        # Fall back to standard gemini key if veo key is not provided
+        api_key = settings.veo_api_key or settings.gemini_api_key
+        if not api_key:
+            return None
+        try:
+            from google import genai  # type: ignore
+            self._veo_client = genai.Client(api_key=api_key)
+            print("[SUCCESS] Dedicated Veo client initialized")
+            return self._veo_client
+        except Exception as exc:
+            print(f"[WARNING] Dedicated Veo client init failed: {exc}")
             return None
 
     # ── Vision analysis (Gemini 2.5 Flash) ──────────────────────

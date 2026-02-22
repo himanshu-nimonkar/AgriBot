@@ -26,8 +26,11 @@ class Settings(BaseSettings):
     # Google Earth Engine
     gee_service_account_file: str = ""
     
-    # Gemini API (for Veo3 video generation + Vision analysis)
+    # Gemini API (for Vision analysis)
     gemini_api_key: str = ""
+    
+    # Dedicated Veo API Key (for video generation if different from gemini)
+    veo_api_key: str = ""
     
     # Morph LLM (additive integration)
     morph_api_key: str = ""

@@ -224,7 +224,11 @@ export default function FieldVision({ apiUrl = 'http://127.0.0.1:8000' }) {
                     <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-gradient-to-br from-olive-leaf/20 to-sage/30 text-black-forest shadow-inner clay-button cursor-pointer flex-shrink-0">
                         <Film size={16} className="text-black-forest saturate-150 relative z-10 drop-shadow-sm mix-blend-multiply" />
                     </div>
-                    Field Vision
+                    <div className="flex flex-col">
+                        <span>Field Vision</span>
+                        <span className="text-[10px] text-black-forest/60 mt-0.5 leading-snug font-normal hidden lg:block max-w-[220px]">Upload an aerial field photo to get AI crop analysis and a time-lapse growth simulation.</span>
+                        <span className="text-[9px] text-black-forest/60 mt-0.5 leading-snug font-normal lg:hidden">AI crop analysis & growth simulation.</span>
+                    </div>
                 </h3>
                 <div className="flex items-center gap-1.5">
                     {phase !== 'idle' && (

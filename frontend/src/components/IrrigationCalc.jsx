@@ -72,6 +72,8 @@ function IrrigationCalc({ weatherData, unitPreference = 'metric' }) {
                             Irrigation Calculator
                         </h3>
                         <p className="text-[10px] text-black-forest/50 font-medium mt-0.5 tracking-wide">ET₀ & EVAPOTRANSPIRATION</p>
+                        <p className="text-[10px] text-black-forest/60 mt-0.5 leading-snug max-w-[220px] hidden lg:block">Calculates exact daily water needs for your crop based on live ET₀ data to prevent over-watering.</p>
+                        <p className="text-[9px] text-black-forest/60 mt-0.5 leading-snug lg:hidden">Precise crop water needs based on live ET₀.</p>
                     </div>
                 </div>
                 <div className="flex flex-col justify-center h-full">

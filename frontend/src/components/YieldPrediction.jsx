@@ -65,6 +65,8 @@ export default function YieldPrediction({ satelliteData, weatherData, apiUrl }) 
                             AI Yield Forecaster
                         </h3>
                         <p className="text-[10px] text-black-forest/50 font-medium mt-0.5">Estimates seasonal tonnage via NDVI & Telemetry</p>
+                        <p className="text-[10px] text-black-forest/60 mt-0.5 leading-snug max-w-[220px] hidden lg:block">Uses current satellite health and weather data to estimate your end-of-season crop yield.</p>
+                        <p className="text-[9px] text-black-forest/60 mt-0.5 leading-snug lg:hidden">End-of-season yield estimates.</p>
                     </div>
                 </div>
                 <div className="flex flex-col justify-center h-full">

@@ -139,6 +139,8 @@ function WeatherDashboard({
                                 Weather Intelligence
                             </h2>
                             <p className="text-[10px] text-black-forest/50 font-medium mt-0.5 uppercase tracking-[0.1em]">HYPERLOCAL FORECAST</p>
+                            <p className="text-[10px] text-black-forest/60 mt-0.5 leading-snug max-w-[200px] hidden lg:block">Provides real-time conditions, disease risk, and spray windows specific to your exact field location.</p>
+                            <p className="text-[9px] text-black-forest/60 mt-0.5 leading-snug lg:hidden">Live field conditions & spray windows.</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
