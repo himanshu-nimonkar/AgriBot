@@ -66,6 +66,7 @@ const getApiBaseUrl = () => {
 }
 
 const API_BASE_URL = getApiBaseUrl()
+console.log('[AgriBot] API_BASE_URL:', API_BASE_URL)
 
 const getWsUrl = () => {
     if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL
@@ -74,12 +75,14 @@ const getWsUrl = () => {
     if (baseUrl.startsWith('/')) baseUrl = window.location.origin + baseUrl
     else if (!baseUrl.startsWith('http')) baseUrl = `http://${baseUrl}`
 
-    return baseUrl.startsWith('https')
+    const wsUrl = baseUrl.startsWith('https')
         ? baseUrl.replace('https://', 'wss://') + '/ws/dashboard'
         : baseUrl.replace('http://', 'ws://') + '/ws/dashboard'
+    return wsUrl
 }
 
 const WS_URL = getWsUrl()
+console.log('[AgriBot] WS_URL:', WS_URL)
 window.USER_WS_URL = WS_URL
 
 const generateUUID = () => {
