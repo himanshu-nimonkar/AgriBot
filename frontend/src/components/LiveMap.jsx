@@ -156,12 +156,14 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
     }, [location])
 
     const validCenter = useMemo(() => {
-        if (!position || !Array.isArray(position) || position.length < 2) return [38.5449, -121.7405];
-        const lat = Number(position[0]);
-        const lon = Number(position[1]);
-        if (isNaN(lat) || isNaN(lon)) return [38.5449, -121.7405];
-        return [lat, lon];
-    }, [position]);
+        const lat = parseFloat(position?.[0])
+        const lon = parseFloat(position?.[1])
+        if (isNaN(lat) || isNaN(lon)) {
+            // Ultimate fallback to Davis, CA
+            return [38.5449, -121.7405]
+        }
+        return [lat, lon]
+    }, [position])
 
     const handleLocate = () => {
         if (navigator.geolocation) {
