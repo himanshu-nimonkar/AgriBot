@@ -1,0 +1,21 @@
+{
+  "name": "AgriBot | Intelligent Farm Assistant",
+  "short_name": "AgriBot",
+  "description": "Expert agricultural decision support for Yolo County, CA farmers.",
+  "start_url": "/?source=pwa",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/AgriBot.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/AgriBot.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
