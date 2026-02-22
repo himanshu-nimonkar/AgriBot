@@ -10,7 +10,8 @@ import {
     Mic,
     MicOff,
     Download,
-    Wheat
+    Wheat,
+    Globe
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import DOMPurify from 'dompurify'
@@ -830,31 +831,33 @@ function App() {
                                 </div>
                             </div>
 
-                            <div className={mobileTab === 'map' && !isDesktop ? 'contents' : 'hidden'}>
-                                <div className="h-[calc(100vh-200px)] clay-card-static p-1 overflow-hidden">
-                                    <Suspense fallback={<LoadingScreen />}>
-                                        <ErrorBoundary>
-                                            {location && !isNaN(parseFloat(location.lat)) && !isNaN(parseFloat(location.lon)) ? (
-                                                <LiveMap
-                                                    location={location}
-                                                    setLocation={setLocation}
-                                                    satelliteData={satelliteData}
-                                                    activeLayer={activeMapLayer}
-                                                    onActiveLayerChange={setActiveMapLayer}
-                                                    onNdviPointChange={setSelectedNdviPoint}
-                                                    onLocateMe={handleLocateMe}
-                                                    layerSummary={layerSummary}
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex flex-col items-center justify-center bg-black-forest/5 p-4 text-center">
-                                                    <Globe className="w-8 h-8 text-olive-leaf/40 mb-2 animate-pulse" />
-                                                    <p className="text-sm font-semibold text-black-forest/60 text-white/60">Waiting for coordinates...</p>
-                                                </div>
-                                            )}
-                                        </ErrorBoundary>
-                                    </Suspense>
+                            {mobileTab === 'map' && !isDesktop && (
+                                <div className="contents">
+                                    <div className="h-[calc(100vh-200px)] clay-card-static p-1 overflow-hidden">
+                                        <Suspense fallback={<LoadingScreen />}>
+                                            <ErrorBoundary>
+                                                {location && !isNaN(parseFloat(location.lat)) && !isNaN(parseFloat(location.lon)) ? (
+                                                    <LiveMap
+                                                        location={location}
+                                                        setLocation={setLocation}
+                                                        satelliteData={satelliteData}
+                                                        activeLayer={activeMapLayer}
+                                                        onActiveLayerChange={setActiveMapLayer}
+                                                        onNdviPointChange={setSelectedNdviPoint}
+                                                        onLocateMe={handleLocateMe}
+                                                        layerSummary={layerSummary}
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex flex-col items-center justify-center bg-black-forest/5 p-4 text-center">
+                                                        <Globe className="w-8 h-8 text-olive-leaf/40 mb-2 animate-pulse" />
+                                                        <p className="text-sm font-semibold text-black-forest/60 text-white/60">Waiting for coordinates...</p>
+                                                    </div>
+                                                )}
+                                            </ErrorBoundary>
+                                        </Suspense>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             <div className={mobileTab === 'data' ? 'contents' : 'hidden'}>
                                 <div className="h-[calc(100vh-200px)] overflow-y-auto pb-4 pr-1 space-y-3 scrollbar-fade">
