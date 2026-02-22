@@ -27,13 +27,19 @@ function LocationMarker({ position, setPosition }) {
                 try {
                     // Check if we already are at this position to avoid redundant flyTo
                     const currentCenter = map.getCenter();
-                    if (Math.abs(currentCenter.lat - lat) > 0.0001 || Math.abs(currentCenter.lng - lon) > 0.0001) {
-                        console.log(`[Map] Flying to: ${lat}, ${lon}`);
-                        map.flyTo([lat, lon], 16, { duration: 1.5 });
+                    const dist = Math.abs(currentCenter.lat - lat) + Math.abs(currentCenter.lng - lon);
+                    
+                    if (dist > 0.0001) {
+                        if (canAnimate) {
+                            console.log(`[Map] Flying to: ${lat}, ${lon}`);
+                            map.flyTo([lat, lon], 16, { duration: 1.5 });
+                        } else {
+                            console.log(`[Map] Snapping to (no animation): ${lat}, ${lon}`);
+                            map.setView([lat, lon], 16);
+                        }
                     }
                 } catch (err) {
-                    console.warn('[Map] flyTo failed, using setView fallback:', err);
-                    map.setView([lat, lon], 16);
+                    console.warn('[Map] flyTo/setView failed:', err);
                 }
             }
         }
@@ -131,11 +137,17 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
     const [position, setPosition] = useState([defaultLat, defaultLon])
     const [isMapReady, setIsMapReady] = useState(false)
     const [isComponentReady, setIsComponentReady] = useState(false)
+    const [canAnimate, setCanAnimate] = useState(false)
     
     useEffect(() => {
         // Delay mount by one tick to ensure props are stable
-        const timer = setTimeout(() => setIsComponentReady(true), 50);
-        return () => clearTimeout(timer);
+        const mountTimer = setTimeout(() => setIsComponentReady(true), 50);
+        // Delay animations to ensure Leaflet is fully stable
+        const animateTimer = setTimeout(() => setCanAnimate(true), 2000);
+        return () => {
+            clearTimeout(mountTimer);
+            clearTimeout(animateTimer);
+        };
     }, []);
 
     // Sync incoming valid locations to state - removed duplicate useEffect
