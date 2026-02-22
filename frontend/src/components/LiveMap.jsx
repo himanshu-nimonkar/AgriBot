@@ -117,7 +117,8 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
     const defaultLat = !isNaN(safeLat) ? safeLat : 38.5449;
     const defaultLon = !isNaN(safeLon) ? safeLon : -121.7405;
     
-    const [position, setPosition] = useState([defaultLat, defaultLon]) 
+    const [position, setPosition] = useState([defaultLat, defaultLon])
+    const [isMapReady, setIsMapReady] = useState(false)
 
     // Sync incoming valid locations to state - removed duplicate useEffect
 
@@ -208,9 +209,13 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
                 key={`map-${validCenter[0]}-${validCenter[1]}`}
                 center={validCenter}
                 zoom={15}
-                scrollWheelZoom={false} // Better for page scroll
+                scrollWheelZoom={false}
                 style={{ height: '100%', width: '100%', background: 'transparent' }}
-                zoomControl={false} // Move zoom control if needed, or stick to default position
+                zoomControl={false}
+                whenReady={() => {
+                    console.log('[Map] Container ready');
+                    setIsMapReady(true);
+                }}
             >
                 {/* 1. Base Tile Layer */}
                 <TileLayer
@@ -219,78 +224,82 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
                     className="map-tiles-filter" // Apply CSS filter for softer look if defined in index.css
                 />
 
-                {/* 2. Elevation Topo Layer Toggle */}
-                {activeLayer === 'elevation' && (
-                    <TileLayer
-                        attribution='&copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
-                        url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
-                        opacity={0.7}
-                    />
-                )}
+                {/* Only render overlays once map is ready and we have valid coords */}
+                {isMapReady && (
+                    <>
+                        {/* 2. Elevation Topo Layer Toggle */}
+                        {activeLayer === 'elevation' && (
+                            <TileLayer
+                                attribution='&copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
+                                url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+                                opacity={0.7}
+                            />
+                        )}
 
-                {/* 3. Satellite Data Tile Layers (Restored) */}
-                {activeLayer === 'ndvi' && satelliteData?.tile_url && (
-                    <TileLayer
-                        key={`ndvi-${satelliteData.tile_url}`}
-                        url={satelliteData.tile_url}
-                        opacity={0.7}
-                        zIndex={100}
-                    />
-                )}
-                {activeLayer === 'moisture' && satelliteData?.ndwi_tile_url && (
-                    <TileLayer
-                        key={`ndwi-${satelliteData.ndwi_tile_url}`}
-                        url={satelliteData.ndwi_tile_url}
-                        opacity={0.7}
-                        zIndex={100}
-                    />
-                )}
+                        {/* 3. Satellite Data Tile Layers (Restored) */}
+                        {activeLayer === 'ndvi' && satelliteData?.tile_url && (
+                            <TileLayer
+                                key={`ndvi-${satelliteData.tile_url}`}
+                                url={satelliteData.tile_url}
+                                opacity={0.7}
+                                zIndex={100}
+                            />
+                        )}
+                        {activeLayer === 'moisture' && satelliteData?.ndwi_tile_url && (
+                            <TileLayer
+                                key={`ndwi-${satelliteData.ndwi_tile_url}`}
+                                url={satelliteData.ndwi_tile_url}
+                                opacity={0.7}
+                                zIndex={100}
+                            />
+                        )}
 
-                {/* 4. Field Boundary Rectangle (Fallback) */}
-                {/* Shows if specific satellite tiles aren't available but layer is active */}
-                {fieldBounds && ((activeLayer === 'ndvi' && !satelliteData?.tile_url) || 
-                  (activeLayer === 'moisture' && !satelliteData?.ndwi_tile_url) || 
-                  activeLayer === 'soil' || activeLayer === 'elevation') && (
-                    <Rectangle
-                        bounds={fieldBounds}
-                        pathOptions={{
-                            color: currentStyle.color,
-                            weight: 2,
-                            fillColor: currentStyle.fillColor,
-                            fillOpacity: currentStyle.fillOpacity,
-                            dashArray: activeLayer === 'elevation' ? '5, 5' : null
-                        }}
-                    >
-                        <Popup className="clay-popup">
-                             <div className="p-1">
-                                 <h4 className="font-bold text-black-forest text-xs uppercase mb-1">
-                                     {activeLayer === 'ndvi' && 'Vegetation Index (NDVI)'}
-                                     {activeLayer === 'moisture' && 'Water Stress Analysis'}
-                                     {activeLayer === 'soil' && 'Soil Composition'}
-                                     {activeLayer === 'elevation' && 'Topography'}
-                                 </h4>
-                                 <div className="text-[10px] text-black-forest/70 space-y-1">
-                                    {activeLayer === 'ndvi' && <p>Value: <span className="font-bold">{satelliteData?.ndvi_current?.toFixed(2) ?? '0.00'}</span></p>}
-                                    {activeLayer === 'moisture' && <p>Status: <span className="text-blue-600 font-bold">{satelliteData?.water_stress_level || 'Adequate'}</span></p>}
-                                    {activeLayer === 'soil' && (
-                                        <>
-                                            <p>Type: <span className="font-bold text-copperwood uppercase">{satelliteData?.soil_type || 'Unknown Soil Type'}</span></p>
-                                            <p>Dominant Probability: <span className="font-bold">
-                                                {satelliteData?.soil_probabilities && satelliteData.soil_probabilities.length > 0 
-                                                    ? `${(satelliteData.soil_probabilities[0][1] * 100).toFixed(1)}%` 
-                                                    : 'N/A'}
-                                            </span></p>
-                                        </>
-                                    )}
-                                    {activeLayer === 'elevation' && <p>Avg Elevation: <span className="font-bold">42m</span></p>}
-                                 </div>
-                             </div>
-                        </Popup>
-                    </Rectangle>
-                )}
+                        {/* 4. Field Boundary Rectangle (Fallback) */}
+                        {fieldBounds && ((activeLayer === 'ndvi' && !satelliteData?.tile_url) || 
+                          (activeLayer === 'moisture' && !satelliteData?.ndwi_tile_url) || 
+                          activeLayer === 'soil' || activeLayer === 'elevation') && (
+                            <Rectangle
+                                bounds={fieldBounds}
+                                pathOptions={{
+                                    color: currentStyle.color,
+                                    weight: 2,
+                                    fillColor: currentStyle.fillColor,
+                                    fillOpacity: currentStyle.fillOpacity,
+                                    dashArray: activeLayer === 'elevation' ? '5, 5' : null
+                                }}
+                            >
+                                <Popup className="clay-popup">
+                                     <div className="p-1">
+                                         <h4 className="font-bold text-black-forest text-xs uppercase mb-1">
+                                             {activeLayer === 'ndvi' && 'Vegetation Index (NDVI)'}
+                                             {activeLayer === 'moisture' && 'Water Stress Analysis'}
+                                             {activeLayer === 'soil' && 'Soil Composition'}
+                                             {activeLayer === 'elevation' && 'Topography'}
+                                         </h4>
+                                         <div className="text-[10px] text-black-forest/70 space-y-1">
+                                            {activeLayer === 'ndvi' && <p>Value: <span className="font-bold">{satelliteData?.ndvi_current?.toFixed(2) ?? '0.00'}</span></p>}
+                                            {activeLayer === 'moisture' && <p>Status: <span className="text-blue-600 font-bold">{satelliteData?.water_stress_level || 'Adequate'}</span></p>}
+                                            {activeLayer === 'soil' && (
+                                                <>
+                                                    <p>Type: <span className="font-bold text-copperwood uppercase">{satelliteData?.soil_type || 'Unknown Soil Type'}</span></p>
+                                                    <p>Dominant Probability: <span className="font-bold">
+                                                        {satelliteData?.soil_probabilities && satelliteData.soil_probabilities.length > 0 
+                                                            ? `${(satelliteData.soil_probabilities[0][1] * 100).toFixed(1)}%` 
+                                                            : 'N/A'}
+                                                    </span></p>
+                                                </>
+                                            )}
+                                            {activeLayer === 'elevation' && <p>Avg Elevation: <span className="font-bold">42m</span></p>}
+                                         </div>
+                                     </div>
+                                </Popup>
+                            </Rectangle>
+                        )}
 
-                <LocationMarker position={position} setPosition={setPosition} />
-                <LatLonDisplay position={position} />
+                        <LocationMarker position={position} setPosition={setPosition} />
+                        <LatLonDisplay position={position} />
+                    </>
+                )}
                 <CustomMapControls onLocate={handleLocate} />
 
             </MapContainer>
