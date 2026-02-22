@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertTriangle, CloudSnow, Wind, CloudRain, Thermometer, Droplets, X, Bell } from 'lucide-react'
 
@@ -107,60 +108,63 @@ function WeatherWarnings({ weatherData, forecast }) {
                 </span>
             </motion.button>
 
-            <AnimatePresence>
-                {isOpen && (
-                    <>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 z-[99998]"
-                            onClick={() => setIsOpen(false)}
-                        />
-                        <motion.div
-                            initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                            transition={{ type: 'spring', damping: 22, stiffness: 300 }}
-                            className="fixed top-[84px] lg:top-24 right-4 lg:right-6 w-96 max-w-[92vw] max-h-[60vh] overflow-y-auto clay-card-static p-3 z-[999999] space-y-2"
-                        >
-                            <div className="flex items-center justify-between mb-1">
-                                <h4 className="text-xs font-bold text-black-forest uppercase tracking-wide flex items-center gap-1.5">
-                                    <Bell size={12} className="text-amber-500" />
-                                    Notifications ({alerts.length})
-                                </h4>
-                                <button
-                                    onClick={() => setIsOpen(false)}
-                                    className="p-1 rounded-lg hover:bg-black-forest/5 text-black-forest/30"
-                                    aria-label="Close notifications"
-                                >
-                                    <X size={12} />
-                                </button>
-                            </div>
-
-                            <p className="text-[10px] text-black-forest/45 leading-relaxed">
-                                Alerts are generated from current weather and forecast data for this selected location. No login or push account is required.
-                            </p>
-
-                            {alerts.length === 0 && (
-                                <div className="clay-tile p-3 text-xs text-black-forest/55">
-                                    No active weather notifications for this location.
+            {typeof document !== 'undefined' && createPortal(
+                <AnimatePresence>
+                    {isOpen && (
+                        <>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="fixed inset-0 z-[99998]"
+                                onClick={() => setIsOpen(false)}
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                                transition={{ type: 'spring', damping: 22, stiffness: 300 }}
+                                className="fixed top-[84px] lg:top-24 right-4 lg:right-6 w-96 max-w-[92vw] max-h-[60vh] overflow-y-auto clay-card-static p-3 z-[999999] space-y-2 shadow-2xl"
+                            >
+                                <div className="flex items-center justify-between mb-1">
+                                    <h4 className="text-xs font-bold text-black-forest uppercase tracking-wide flex items-center gap-1.5">
+                                        <Bell size={12} className="text-amber-500" />
+                                        Notifications ({alerts.length})
+                                    </h4>
+                                    <button
+                                        onClick={() => setIsOpen(false)}
+                                        className="p-1 rounded-lg hover:bg-black-forest/5 text-black-forest/30"
+                                        aria-label="Close notifications"
+                                    >
+                                        <X size={12} />
+                                    </button>
                                 </div>
-                            )}
 
-                            {alerts.map((alert) => (
-                                <div key={alert.id} className={`flex items-start gap-2.5 p-2.5 rounded-xl border ${alert.color} text-xs`}>
-                                    <alert.icon size={14} className="mt-0.5 shrink-0" />
-                                    <div>
-                                        <p className="font-semibold">{alert.title}</p>
-                                        <p className="opacity-85 mt-0.5 leading-relaxed">{alert.message}</p>
+                                <p className="text-[10px] text-black-forest/45 leading-relaxed">
+                                    Alerts are generated from current weather and forecast data for this selected location. No login or push account is required.
+                                </p>
+
+                                {alerts.length === 0 && (
+                                    <div className="clay-tile p-3 text-xs text-black-forest/55">
+                                        No active weather notifications for this location.
                                     </div>
-                                </div>
-                            ))}
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
+                                )}
+
+                                {alerts.map((alert) => (
+                                    <div key={alert.id} className={`flex items-start gap-2.5 p-2.5 rounded-xl border ${alert.color} text-xs`}>
+                                        <alert.icon size={14} className="mt-0.5 shrink-0" />
+                                        <div>
+                                            <p className="font-semibold">{alert.title}</p>
+                                            <p className="opacity-85 mt-0.5 leading-relaxed">{alert.message}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </>
     )
 }

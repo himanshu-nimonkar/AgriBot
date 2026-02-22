@@ -14,9 +14,9 @@ class MarketService:
         "almonds": {"unit": "lb", "price": 1.95, "trend": "stable"},
         "walnuts": {"unit": "lb", "price": 0.65, "trend": "down"},
         "processing_tomatoes": {"unit": "ton", "price": 138.00, "trend": "up"},
-        "wine_grapes": {"unit": "ton", "price": 850.00, "trend": "variable"},
         "rice": {"unit": "cwt", "price": 18.50, "trend": "stable"},
-        "pistachios": {"unit": "lb", "price": 2.80, "trend": "up"}
+        "corn": {"unit": "bushel", "price": 4.50, "trend": "down"},
+        "wheat": {"unit": "bushel", "price": 6.10, "trend": "variable"}
     }
     
     async def get_market_data(self, crop: str) -> Dict[str, Any]:
@@ -26,9 +26,9 @@ class MarketService:
         if "almond" in crop_key: crop_key = "almonds"
         elif "walnut" in crop_key: crop_key = "walnuts"
         elif "tomato" in crop_key: crop_key = "processing_tomatoes"
-        elif "grape" in crop_key: crop_key = "wine_grapes"
         elif "rice" in crop_key: crop_key = "rice"
-        elif "pistachio" in crop_key: crop_key = "pistachios"
+        elif "corn" in crop_key: crop_key = "corn"
+        elif "wheat" in crop_key: crop_key = "wheat"
         
         data = self.COMMODITIES.get(crop_key)
         if not data:
@@ -56,14 +56,20 @@ class MarketService:
         bases = {
             "Almonds ($/lb)": 2.10,
             "Walnuts ($/lb)": 1.10,
-            "Tomatoes ($/ton)": 85.00
+            "Tomatoes ($/ton)": 85.00,
+            "Rice ($/cwt)": 15.00,
+            "Corn ($/bu)": 4.00,
+            "Wheat ($/bu)": 5.50
         }
         
         # Simulated volatility multipliers
         curves = {
             "Almonds ($/lb)": [1.0, 0.85, 0.90, 0.75, 0.95, 0.93], # Dropped due to drought/oversupply
             "Walnuts ($/lb)": [1.0, 0.95, 0.70, 0.55, 0.50, 0.59], # Crashed
-            "Tomatoes ($/ton)": [1.0, 1.05, 1.25, 1.65, 1.60, 1.62] # Spiked due to water scarcity
+            "Tomatoes ($/ton)": [1.0, 1.05, 1.25, 1.65, 1.60, 1.62], # Spiked due to water scarcity
+            "Rice ($/cwt)": [1.0, 1.10, 1.15, 1.30, 1.25, 1.23],
+            "Corn ($/bu)": [1.0, 1.20, 1.40, 1.30, 1.10, 1.12],
+            "Wheat ($/bu)": [1.0, 1.30, 1.60, 1.40, 1.15, 1.10]
         }
         
         historical_data = []

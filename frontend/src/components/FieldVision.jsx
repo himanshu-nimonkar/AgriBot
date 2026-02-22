@@ -219,18 +219,13 @@ export default function FieldVision({ apiUrl = 'http://127.0.0.1:8000' }) {
     return (
         <div className="clay-card-static overflow-hidden">
             {/* Header */}
-            <div className="px-4 pt-4 pb-3 border-b border-black-forest/5 clay-header-gradient flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 clay-primary rounded-lg flex items-center justify-center shadow-clay-sm">
-                        <Film size={14} className="text-white" />
+            <div className="px-5 pt-5 pb-4 border-b border-black-forest/5 clay-header-gradient flex justify-between items-center">
+                <h3 className="font-bold text-black-forest tracking-wide text-sm flex items-center gap-2">
+                    <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-gradient-to-br from-olive-leaf/20 to-sage/30 text-black-forest shadow-inner clay-button cursor-pointer flex-shrink-0">
+                        <Film size={16} className="text-black-forest saturate-150 relative z-10 drop-shadow-sm mix-blend-multiply" />
                     </div>
-                    <div>
-                        <h3 className="text-xs font-bold text-black-forest uppercase tracking-[0.12em]">
-                            Field Vision
-                        </h3>
-                        <p className="text-[9px] text-black-forest/40 font-medium">Powered by Veo 3.1 + Gemini</p>
-                    </div>
-                </div>
+                    Field Vision
+                </h3>
                 <div className="flex items-center gap-1.5">
                     {phase !== 'idle' && (
                         <motion.button
@@ -395,15 +390,10 @@ export default function FieldVision({ apiUrl = 'http://127.0.0.1:8000' }) {
                                     className="space-y-3"
                                 >
                                     <div className="flex items-center gap-1.5">
-                                        <CheckCircle2 size={13} className="text-olive-leaf" />
-                                        <span className="text-[10px] font-bold text-olive-leaf uppercase tracking-wider">
+                                        <CheckCircle2 size={14} className="text-olive-leaf" />
+                                        <span className="text-xs font-bold text-olive-leaf tracking-wider uppercase drop-shadow-sm">
                                             Field Analytics
                                         </span>
-                                        {analytics.is_mock && (
-                                            <span className="text-[9px] bg-sunlit-clay/20 text-copperwood px-1.5 py-0.5 rounded-full font-medium">
-                                                DEMO
-                                            </span>
-                                        )}
                                     </div>
 
                                     {/* Main metric grid */}
@@ -471,8 +461,8 @@ export default function FieldVision({ apiUrl = 'http://127.0.0.1:8000' }) {
                                                     <p className="text-xs font-semibold text-olive-leaf truncate">{analytics.recommended_crop}</p>
                                                 </div>
                                             )}
-                                            {analytics.notes && (
-                                                <p className="text-[9px] text-black-forest/50 leading-snug mt-1">{analytics.notes}</p>
+                                            {analytics.notes && !analytics.is_mock && (
+                                                <p className="text-[10px] text-black-forest/60 leading-snug mt-1 italic">{analytics.notes}</p>
                                             )}
                                         </div>
                                     </div>

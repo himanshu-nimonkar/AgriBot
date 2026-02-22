@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion'
-import { Map, MessageCircle, BarChart3, Settings, Wheat } from 'lucide-react'
+import { Map, MessageCircle, BarChart3, Settings, Camera } from 'lucide-react'
 
 const tabs = [
     { id: 'chat', label: 'Chat', icon: MessageCircle },
     { id: 'map', label: 'Map', icon: Map },
     { id: 'data', label: 'Data', icon: BarChart3 },
-    { id: 'vision', label: 'Vision', icon: Wheat },
+    { id: 'vision', label: 'Vision', icon: Camera },
 ]
 
 function BottomNav({ activeTab = 'chat', onTabChange }) {

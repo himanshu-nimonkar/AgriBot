@@ -111,7 +111,8 @@ Exactly 3-5 Conversational answer sentences. Explain the "why" briefly. Avoid bu
 </voice_summary>
 
 <full_response>
-Give 1–2 cohesive paragraphs (no bullet lists) that weave together the weather, satellite, and research context. Sound like an expert friend from Yolo County. Keep it specific and practical. Include [Source: ...] inline for any facts drawn from research. Avoid Markdown lists unless absolutely necessary.
+Give 1–2 cohesive paragraphs that weave together the weather, satellite, and research context. Sound like an expert friend from Yolo County. Keep it specific and practical.
+Use MARKDOWN formatting: use **bold** for key metrics/actions, use `##` or `###` for headings, and use markdown tables if presenting structured data (like chemical rates). DO NOT use any emojis. Include [Source: ...] inline for facts drawn from research.
 </full_response>
 
 <sources>
@@ -239,46 +240,42 @@ I've analyzed the field data for {crop or 'your crop'}. Verification of satellit
 """
             
         try:
-            # Parse XML-like Tags
+            import re
             voice_summary = ""
-            full_response = ""
+            full_response = response_text
             sources = []
 
             # Extract Voice Summary
-            v_start = response_text.find("<voice_summary>")
-            v_end = response_text.find("</voice_summary>")
-            if v_start != -1 and v_end != -1:
-                voice_summary = response_text[v_start + 15 : v_end].strip()
+            v_match = re.search(r'<voice_summary>(.*?)</voice_summary>', response_text, re.DOTALL | re.IGNORECASE)
+            if v_match:
+                voice_summary = v_match.group(1).strip()
             
-            # Extract Full Response
-            f_start = response_text.find("<full_response>")
-            f_end = response_text.find("</full_response>")
-            if f_start != -1 and f_end != -1:
-                full_response = response_text[f_start + 15 : f_end].strip()
-            
-            # Extract Sources
-            s_start = response_text.find("<sources>")
-            s_end = response_text.find("</sources>")
-            if s_start != -1 and s_end != -1:
-                sources_text = response_text[s_start + 9 : s_end].strip()
+            # Extract Sources (Handle multiple <sources> tags if the LLM hallucinated them)
+            s_matches = re.finditer(r'<sources?>(.*?)</sources?>', response_text, re.DOTALL | re.IGNORECASE)
+            for s_match in s_matches:
+                sources_text = s_match.group(1).strip()
                 if sources_text:
-                    sources = [s.strip() for s in sources_text.split('\\n') if s.strip()]
+                    sources.extend([s.strip() for s in sources_text.split('\n') if s.strip()])
 
-            # Fallback if parsing failed completely
-            if not full_response:
-                full_response = response_text
-                # strip tags if they exist but were malformed
-                full_response = full_response.replace("<full_response>", "").replace("</full_response>", "")
-            
+            # Extract Full Response
+            f_match = re.search(r'<full_response>(.*?)</full_response>', response_text, re.DOTALL | re.IGNORECASE)
+            if f_match:
+                full_response = f_match.group(1).strip()
+
+            # ERADICATE ANY LEAKING TAGS AND THEIR CONTENT FROM THE FINAL TEXT
+            full_response = re.sub(r'<voice_summary>.*?</voice_summary>', '', full_response, flags=re.DOTALL | re.IGNORECASE)
+            full_response = re.sub(r'<sources?>.*?</sources?>', '', full_response, flags=re.DOTALL | re.IGNORECASE)
+            full_response = re.sub(r'</?full_response>', '', full_response, flags=re.IGNORECASE).strip()
+
             if not voice_summary:
                 voice_summary = full_response[:300] + "..."
 
-            print(f"DEBUG: Final LLM Response Text:\n{response_text}\n")
+            print(f"DEBUG: Final LLM Response Text:\n{full_response}\n")
             return LLMResponse(
                 text=full_response,
                 voice_summary=voice_summary,
                 sources=sources,
-                confidence=0.9
+                confidence=0.85
             )
         except Exception as e:
             print(f"LLM Parse Error: {e}")
@@ -303,11 +300,12 @@ Return ONLY valid JSON with these fields:
 - crop: one of [almonds, tomatoes, grapes, rice, pistachios, walnuts, unknown]
 - question_type: [pest, disease, irrigation, weather, harvest, planting, market, chemical, math, general]
 - optimization_target: [none, time, location, resource]
+- optimization_target: [none, time, location, resource]
     - "Where is the best place to...?" -> location
     - "When should I...?" -> time
     - "How much water...?" -> resource
 - location_address: Extract specific address/city. null if generic.
-- is_agricultural: boolean
+- is_agricultural: boolean (MUST BE TRUE for any farm, crop, weather, chemical, irrigation, pest, soil, or spray-related questions)
 - urgency: [immediate, this_week, planning]
 - keywords: list of terms"""
 

@@ -1,5 +1,7 @@
-import { BookOpen, TrendingUp, FlaskConical, ExternalLink, Brain } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { BookOpen, TrendingUp, FlaskConical, ExternalLink, Brain, ChevronUp, ChevronDown } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
+import { usePersistentToggle } from '../hooks/usePersistentToggle'
 
 const stagger = {
     hidden: { opacity: 0 },
@@ -14,16 +16,51 @@ const fadeUp = {
 }
 
 function WhyBox({ results = [], sources = [], marketData, chemicalData = [], apiUrl = 'http://localhost:8000' }) {
+    const [expanded, setExpanded] = usePersistentToggle('ag_whybox_expanded', false)
+
     // If no data at all, show curated Yolo County article
     if (!results.length && !sources.length && !marketData && !chemicalData.length) {
         return (
-            <div className="clay-card-static p-0 overflow-hidden h-full flex flex-col">
-                <div className="p-4 border-b border-black-forest/5 clay-header-gradient">
-                    <h3 className="font-semibold text-olive-leaf flex items-center gap-2 text-sm uppercase tracking-[0.1em]">
-                        <Brain size={16} className="text-olive-leaf" strokeWidth={1.5} /> Knowledge & Data
-                    </h3>
+            <div className="clay-card-static p-0 overflow-hidden flex flex-col group transition-all duration-300">
+                <div className="p-4 border-b border-black-forest/5 clay-header-gradient flex items-center justify-between relative z-10 w-full">
+                    <div className="flex items-center gap-3">
+                        <motion.div 
+                            whileHover={{ scale: 1.05, rotate: 5 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="w-8 h-8 flex items-center justify-center rounded-xl bg-gradient-to-br from-olive-leaf/20 to-sage/30 text-black-forest shadow-inner clay-button cursor-pointer flex-shrink-0"
+                            style={{ boxShadow: 'inset 2px 2px 4px rgba(255,255,255,0.6), inset -2px -2px 4px rgba(0,0,0,0.05)' }}
+                        >
+                            <Brain className="w-4 h-4 text-olive-leaf drop-shadow-sm" />
+                        </motion.div>
+                        <div>
+                            <h3 className="text-[13px] font-bold text-black-forest uppercase tracking-tight">
+                                Knowledge Engine
+                            </h3>
+                            <p className="text-[10px] text-black-forest/50 font-medium mt-0.5 tracking-wide">YOLO COUNTY INSIGHTS</p>
+                        </div>
+                    </div>
+                    <div className="flex flex-col justify-center h-full mt-1">
+                        <motion.button
+                            whileHover={{ scale: 1.1, backgroundColor: "rgba(0,0,0,0.05)" }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => setExpanded(!expanded)}
+                            className="clay-button w-7 h-7 rounded-lg flex items-center justify-center text-black-forest/40 hover:text-olive-leaf transition-colors"
+                            aria-label={expanded ? 'Collapse' : 'Expand'}
+                        >
+                            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </motion.button>
+                    </div>
                 </div>
-                <div className="flex-1 p-4">
+                
+                <AnimatePresence mode="sync">
+                {expanded && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 28 }}
+                        className="flex-1 p-4"
+                    >
                     <motion.div
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -48,17 +85,59 @@ function WhyBox({ results = [], sources = [], marketData, chemicalData = [], api
                             </a>
                         </div>
                     </motion.div>
-                </div>
+                    </motion.div>
+                )}
+                </AnimatePresence>
             </div>
         )
     }
 
     return (
-        <div className="space-y-4 w-full flex flex-col" role="region" aria-label="Agricultural context data">
+        <div className="clay-card-static p-0 overflow-hidden flex flex-col group transition-all duration-300" role="region" aria-label="Agricultural context data">
+            
+            <div className="p-4 border-b border-black-forest/5 clay-header-gradient flex items-center justify-between relative z-10 w-full">
+                <div className="flex items-center gap-3">
+                    <motion.div 
+                        whileHover={{ scale: 1.05, rotate: 5 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-gradient-to-br from-olive-leaf/20 to-sage/30 text-black-forest shadow-inner clay-button cursor-pointer flex-shrink-0"
+                        style={{ boxShadow: 'inset 2px 2px 4px rgba(255,255,255,0.6), inset -2px -2px 4px rgba(0,0,0,0.05)' }}
+                    >
+                        <Brain className="w-4 h-4 text-olive-leaf drop-shadow-sm" />
+                    </motion.div>
+                    <div>
+                        <h3 className="text-[13px] font-bold text-black-forest uppercase tracking-tight">
+                            Knowledge Engine
+                        </h3>
+                        <p className="text-[10px] text-black-forest/50 font-medium mt-0.5 tracking-wide">YOLO COUNTY INSIGHTS</p>
+                    </div>
+                </div>
+                <div className="flex flex-col justify-center h-full mt-1">
+                    <motion.button
+                        whileHover={{ scale: 1.1, backgroundColor: "rgba(0,0,0,0.05)" }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setExpanded(!expanded)}
+                        className="clay-button w-7 h-7 rounded-lg flex items-center justify-center text-black-forest/40 hover:text-olive-leaf transition-colors"
+                        aria-label={expanded ? 'Collapse' : 'Expand'}
+                    >
+                        {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </motion.button>
+                </div>
+            </div>
+
+            <AnimatePresence mode="sync">
+            {expanded && (
+                <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 28 }}
+                    className="space-y-4 w-full flex flex-col overflow-hidden"
+                >
             {/* 1. Market Data */}
             {marketData && marketData.available && (
-                <motion.div initial="hidden" animate="show" variants={stagger} className="clay-card-static p-4 space-y-3">
-                    <motion.div variants={fadeUp} className="flex items-center gap-2 text-[11px] font-bold text-copperwood uppercase tracking-[0.12em] border-b border-black-forest/5 pb-2">
+                <motion.div initial="hidden" animate="show" variants={stagger} className="p-5 border-b border-black-forest/5 space-y-3">
+                    <motion.div variants={fadeUp} className="flex items-center gap-2 text-[11px] font-bold text-copperwood uppercase tracking-[0.12em] pb-1">
                         <TrendingUp size={14} className="text-copperwood" />
                         <span>Market Intelligence</span>
                         </motion.div>
@@ -85,8 +164,8 @@ function WhyBox({ results = [], sources = [], marketData, chemicalData = [], api
 
                 {/* 2. Chemical Labels */}
                 {chemicalData.length > 0 && (
-                    <motion.div initial="hidden" animate="show" variants={stagger} className="clay-card-static p-4 space-y-3">
-                        <motion.div variants={fadeUp} className="flex items-center gap-2 text-[11px] font-bold text-sunlit-clay uppercase tracking-[0.12em] border-b border-black-forest/5 pb-2">
+                    <motion.div initial="hidden" animate="show" variants={stagger} className="p-5 border-b border-black-forest/5 space-y-3">
+                        <motion.div variants={fadeUp} className="flex items-center gap-2 text-[11px] font-bold text-sunlit-clay uppercase tracking-[0.12em] pb-1">
                             <FlaskConical size={14} className="text-sunlit-clay" />
                             <span>Recommended Products</span>
                         </motion.div>
@@ -110,8 +189,8 @@ function WhyBox({ results = [], sources = [], marketData, chemicalData = [], api
 
                 {/* 3. Research Sources */}
                 {(results.length > 0 || sources.length > 0) && (
-                    <motion.div initial="hidden" animate="show" variants={stagger} className="clay-card-static p-4 space-y-3">
-                        <motion.div variants={fadeUp} className="flex items-center gap-2 text-[11px] font-bold text-olive-leaf uppercase tracking-[0.12em] border-b border-black-forest/5 pb-2">
+                    <motion.div initial="hidden" animate="show" variants={stagger} className="p-5 space-y-3">
+                        <motion.div variants={fadeUp} className="flex items-center gap-2 text-[11px] font-bold text-olive-leaf uppercase tracking-[0.12em] pb-1">
                             <BookOpen size={14} className="text-olive-leaf" />
                             <span>Research Citations</span>
                         </motion.div>
@@ -180,6 +259,9 @@ function WhyBox({ results = [], sources = [], marketData, chemicalData = [], api
                         </ul>
                     </motion.div>
                 )}
+            </motion.div>
+            )}
+            </AnimatePresence>
         </div>
     )
 }

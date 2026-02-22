@@ -2,7 +2,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl, Rectangl
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useState, useEffect, useMemo } from 'react'
-import { Locate, Layers, Ruler, Mountain, Droplets, Activity } from 'lucide-react'
+import { Locate, Layers, Ruler, Mountain, Droplets, Activity, Globe, Leaf } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import throttle from 'lodash.throttle'
 
@@ -19,18 +19,27 @@ function LocationMarker({ position, setPosition }) {
     const map = useMap()
 
     useEffect(() => {
-        if (position) {
-            map.flyTo(position, 16, { duration: 1.5 })
+        if (position && Array.isArray(position) && position.length >= 2) {
+            const lat = Number(position[0]);
+            const lon = Number(position[1]);
+            if (!isNaN(lat) && !isNaN(lon)) {
+                map.flyTo([lat, lon], 16, { duration: 1.5 })
+            }
         }
     }, [position, map])
 
-    return position === null ? null : (
-        <Marker position={position}>
+    if (!position || !Array.isArray(position) || position.length < 2) return null;
+    const lat = Number(position[0]);
+    const lon = Number(position[1]);
+    if (isNaN(lat) || isNaN(lon)) return null;
+
+    return (
+        <Marker position={[lat, lon]}>
             <Popup className="clay-popup">
                 <div className="text-center p-1">
                     <p className="font-bold text-olive-leaf mb-1">Field Center</p>
                     <p className="text-xs text-black-forest/70">
-                        {position[0].toFixed(4)}, {position[1].toFixed(4)}
+                        {lat.toFixed(4)}, {lon.toFixed(4)}
                     </p>
                 </div>
             </Popup>
@@ -39,7 +48,11 @@ function LocationMarker({ position, setPosition }) {
 }
 
 function LatLonDisplay({ position }) {
-    if (!position) return null
+    if (!position || !Array.isArray(position) || position.length < 2) return null;
+    const lat = Number(position[0]);
+    const lon = Number(position[1]);
+    if (isNaN(lat) || isNaN(lon)) return null;
+
     return (
         <div className="leaflet-bottom leaflet-left" style={{ bottom: '20px', left: '20px', zIndex: 1000 }}>
              <motion.div 
@@ -49,12 +62,12 @@ function LatLonDisplay({ position }) {
              >
                 <div className="flex flex-col">
                     <span className="text-[9px] text-black-forest/50 font-bold uppercase tracking-wider">Latitude</span>
-                    <span className="text-xs font-mono font-bold text-olive-leaf">{position[0].toFixed(4)}°N</span>
+                    <span className="text-xs font-mono font-bold text-olive-leaf">{lat.toFixed(4)}°N</span>
                 </div>
                 <div className="w-px h-6 bg-black-forest/10"></div>
                 <div className="flex flex-col">
                     <span className="text-[9px] text-black-forest/50 font-bold uppercase tracking-wider">Longitude</span>
-                    <span className="text-xs font-mono font-bold text-copperwood">{position[1].toFixed(4)}°W</span>
+                    <span className="text-xs font-mono font-bold text-copperwood">{lon.toFixed(4)}°W</span>
                 </div>
              </motion.div>
         </div>
@@ -87,7 +100,26 @@ function CustomMapControls({ onLocate }) {
 }
 
 function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLayerChange, onNdviPointChange, onLocateMe, layerSummary }) {
-    const [position, setPosition] = useState([38.5449, -121.7405]) // Default: UC Davis
+    // Basic NaN protection
+    const safeLat = parseFloat(location?.lat);
+    const safeLon = parseFloat(location?.lon);
+
+    if (isNaN(safeLat) || isNaN(safeLon)) {
+        return (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-black-forest/5 rounded-2xl border-2 border-dashed border-black-forest/10 p-4 text-center">
+                <Globe className="w-8 h-8 text-olive-leaf/40 mb-2 animate-pulse" />
+                <p className="text-sm font-semibold text-black-forest/60">Awaiting GPS telemetry...</p>
+                <p className="text-[10px] text-black-forest/40 mt-1 uppercase tracking-widest">Map calibrating</p>
+            </div>
+        );
+    }
+    
+    const defaultLat = !isNaN(safeLat) ? safeLat : 38.5449;
+    const defaultLon = !isNaN(safeLon) ? safeLon : -121.7405;
+    
+    const [position, setPosition] = useState([defaultLat, defaultLon]) 
+
+    // Sync incoming valid locations to state - removed duplicate useEffect
 
     // BOUNDARY CALCULATION: Create a rectangle around the center
     const fieldBounds = useMemo(() => {
@@ -101,22 +133,35 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
     }, [position])
 
     useEffect(() => {
-        if (location && location.lat && location.lon) {
-            setPosition([parseFloat(location.lat), parseFloat(location.lon)])
-        } else {
-            // Fallback content if location missing
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        setPosition([pos.coords.latitude, pos.coords.longitude])
-                    },
-                    (err) => {
-                        console.warn('Geolocation denied, using default')
-                    }
-                )
+        // Fallback for location changes
+        if (location) {
+            const newLat = parseFloat(location?.lat);
+            const newLon = parseFloat(location?.lon);
+            if (!isNaN(newLat) && !isNaN(newLon)) {
+                setPosition([newLat, newLon])
+                return;
             }
         }
+        // Fallback content if location missing or invalid
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    setPosition([pos.coords.latitude, pos.coords.longitude])
+                },
+                (err) => {
+                    console.warn('Geolocation denied, using default')
+                }
+            )
+        }
     }, [location])
+
+    const validCenter = useMemo(() => {
+        if (!position || !Array.isArray(position) || position.length < 2) return [38.5449, -121.7405];
+        const lat = Number(position[0]);
+        const lon = Number(position[1]);
+        if (isNaN(lat) || isNaN(lon)) return [38.5449, -121.7405];
+        return [lat, lon];
+    }, [position]);
 
     const handleLocate = () => {
         if (navigator.geolocation) {
@@ -155,7 +200,7 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
         <div className="relative w-full h-full z-0">
              {/* Map Instance */}
             <MapContainer
-                center={position}
+                center={validCenter}
                 zoom={15}
                 scrollWheelZoom={false} // Better for page scroll
                 style={{ height: '100%', width: '100%', background: 'transparent' }}

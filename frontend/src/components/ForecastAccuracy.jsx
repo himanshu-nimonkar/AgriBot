@@ -131,7 +131,7 @@ function ForecastAccuracy({ lat = 38.5449, lon = -121.7405 }) {
                 className="w-full flex items-center justify-between p-4 clay-header-gradient border-b border-black-forest/5"
             >
                 <h3 className="font-semibold text-olive-leaf flex items-center gap-2 text-sm uppercase tracking-[0.1em]">
-                    <Target size={14} strokeWidth={1.5} /> Forecast Accuracy
+                    <Target size={14} strokeWidth={1.5} className="mt-[-1px]" /> Forecast Accuracy
                 </h3>
                 <ChevronDown
                     size={14}

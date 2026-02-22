@@ -12,6 +12,7 @@ from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 import os
 import sys
+import re
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import settings
@@ -274,7 +275,6 @@ class MorphService:
 
                 # --- Path 2: XML-based tool_calls in content field ---
                 if "<tool_call>" in content:
-                    import re
                     # Capture everything between tags (handles nested JSON braces)
                     xml_matches = re.findall(r'<tool_call>\s*(.*?)\s*</tool_call>', content, re.DOTALL)
                     print(f"[Morph WarpGrep] Path 2: Found {len(xml_matches)} XML tool calls")

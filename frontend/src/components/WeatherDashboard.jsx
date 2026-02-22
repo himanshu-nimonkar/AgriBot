@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Thermometer, Droplets, Wind, CloudRain, TrendingUp, TrendingDown, Minus,
-    Calendar, Sun, GitCompare, Clock, RefreshCw
+    Calendar, Sun, GitCompare, Clock, RefreshCw, ChevronUp, ChevronDown
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
@@ -52,6 +52,7 @@ function WeatherDashboard({
     onUnitChange
 }) {
     const [activeTab, setActiveTab] = useState('current')
+    const [expanded, setExpanded] = useState(true)
     const unit = unitPreference
 
     const toggleUnit = () => {
@@ -118,26 +119,61 @@ function WeatherDashboard({
     }
 
     return (
-        <div className="clay-card overflow-hidden" role="region" aria-label="Weather dashboard">
+        <div className="clay-card overflow-hidden group transition-all duration-300" role="region" aria-label="Weather dashboard">
             {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-olive-leaf/10 via-olive-leaf/5 to-transparent px-5 pt-4 pb-3">
-                <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-sm font-bold text-black-forest uppercase tracking-[0.1em] flex items-center gap-2">
-                        <Thermometer size={15} className="text-olive-leaf" />
-                        Weather Intelligence
-                    </h2>
-                    <motion.button
-                        whileTap={{ scale: 0.92 }}
-                        onClick={toggleUnit}
-                        className="text-[10px] font-bold text-olive-leaf/60 hover:text-olive-leaf px-2.5 py-1 rounded-lg clay-input transition-colors uppercase tracking-wider"
-                        aria-label={`Switch to ${unit === 'metric' ? 'imperial' : 'metric'} units`}
-                    >
-                        {unit === 'metric' ? '°C / km' : '°F / mi'}
-                    </motion.button>
+            <div className="bg-gradient-to-r from-olive-leaf/10 via-olive-leaf/5 to-transparent px-5 pt-4 pb-3 relative z-10 w-full">
+                <div className="flex items-center justify-between mb-3 w-full">
+                    <div className="flex items-center gap-3">
+                        <motion.div 
+                            whileHover={{ scale: 1.05, rotate: 5 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="w-8 h-8 flex items-center justify-center rounded-xl bg-gradient-to-br from-olive-leaf/20 to-sage/30 text-black-forest shadow-inner clay-button cursor-pointer flex-shrink-0"
+                            style={{
+                                boxShadow: 'inset 2px 2px 4px rgba(255,255,255,0.6), inset -2px -2px 4px rgba(0,0,0,0.05)'
+                            }}
+                        >
+                            <Thermometer className="w-4 h-4 text-olive-leaf drop-shadow-sm" />
+                        </motion.div>
+                        <div>
+                            <h2 className="text-[13px] font-bold text-black-forest uppercase tracking-tight">
+                                Weather Intelligence
+                            </h2>
+                            <p className="text-[10px] text-black-forest/50 font-medium mt-0.5 uppercase tracking-[0.1em]">HYPERLOCAL FORECAST</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <motion.button
+                            whileTap={{ scale: 0.92 }}
+                            onClick={toggleUnit}
+                            className="text-[10px] font-bold text-olive-leaf/60 hover:text-olive-leaf px-2.5 py-1 rounded-lg clay-input transition-colors uppercase tracking-wider"
+                            aria-label={`Switch to ${unit === 'metric' ? 'imperial' : 'metric'} units`}
+                        >
+                            {unit === 'metric' ? '°C / km' : '°F / mi'}
+                        </motion.button>
+                        <motion.button
+                            whileHover={{ scale: 1.1, backgroundColor: "rgba(0,0,0,0.05)" }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => setExpanded(!expanded)}
+                            className="clay-button w-7 h-7 rounded-lg flex items-center justify-center text-black-forest/40 hover:text-olive-leaf transition-colors"
+                            aria-label={expanded ? 'Collapse' : 'Expand'}
+                        >
+                            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </motion.button>
+                    </div>
                 </div>
+            </div>
 
+            <AnimatePresence mode="sync">
+                {expanded && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 28 }}
+                        className="flex flex-col w-full overflow-hidden"
+                    >
                 {/* Tab Bar */}
-                <div className="flex gap-1 bg-[var(--clay-inset)] rounded-xl p-1">
+                <div className="flex gap-1 bg-[var(--clay-inset)] rounded-xl p-1 mt-2 mx-1 mb-1">
                     {TABS.map(tab => {
                         const Icon = tab.icon
                         const isActive = activeTab === tab.id
@@ -157,7 +193,6 @@ function WeatherDashboard({
                         )
                     })}
                 </div>
-            </div>
 
             {/* Tab Content */}
             <div className="p-5 pt-4">
@@ -184,6 +219,9 @@ function WeatherDashboard({
                     )}
                 </AnimatePresence>
             </div>
+            </motion.div>
+            )}
+            </AnimatePresence>
         </div>
     )
 }

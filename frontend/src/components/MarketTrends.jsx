@@ -1,12 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePersistentToggle } from '../hooks/usePersistentToggle';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, Loader2, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Loader2, ChevronUp, ChevronDown, Activity } from 'lucide-react';
 
 export default function MarketTrends({ apiUrl }) {
     const [data, setData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [expanded, setExpanded] = usePersistentToggle('ag_market_expanded', false);
+    const [tickerIndex, setTickerIndex] = useState(0);
+
+    const TICKER_DATA = [
+        { name: 'Tomatoes', trend: '+62%', color: 'text-green-600', bg: 'bg-green-500/10', icon: TrendingUp },
+        { name: 'Almonds', trend: '-7%', color: 'text-red-500', bg: 'bg-red-500/10', icon: TrendingDown },
+        { name: 'Walnuts', trend: '-41%', color: 'text-red-500', bg: 'bg-red-500/10', icon: TrendingDown },
+        { name: 'Rice', trend: '+23%', color: 'text-green-600', bg: 'bg-green-500/10', icon: TrendingUp },
+        { name: 'Corn', trend: '+12%', color: 'text-green-600', bg: 'bg-green-500/10', icon: TrendingUp },
+        { name: 'Wheat', trend: '+10%', color: 'text-green-600', bg: 'bg-green-500/10', icon: TrendingUp }
+    ];
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTickerIndex((prev) => (prev + 1) % TICKER_DATA.length);
+        }, 2000);
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         const fetchTrends = async () => {
@@ -68,33 +87,69 @@ export default function MarketTrends({ apiUrl }) {
     }
 
     return (
-        <div className="clay-card p-4 lg:p-6 w-full h-[420px] flex flex-col relative group cursor-default">
-            <div className="flex justify-between items-start mb-6 shrink-0 relative z-10">
+        <div className="clay-card-static p-4 lg:p-5 flex flex-col relative w-full overflow-hidden transition-all duration-300 group">
+            <div className="flex justify-between items-start shrink-0 relative z-10">
                 <div className="flex items-center gap-3">
-                    <div 
-                        className="p-2.5 rounded-xl bg-gradient-to-br from-olive-leaf/20 to-sage/30 text-black-forest shadow-inner"
+                    <motion.div 
+                        whileHover={{ scale: 1.05, rotate: 5 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-gradient-to-br from-olive-leaf/20 to-sage/30 text-black-forest shadow-inner clay-button cursor-pointer flex-shrink-0"
                         style={{
                             boxShadow: 'inset 2px 2px 4px rgba(255,255,255,0.6), inset -2px -2px 4px rgba(0,0,0,0.05)'
                         }}
                     >
-                        <DollarSign className="w-5 h-5 text-copperwood" />
-                    </div>
+                        <Activity className="w-4 h-4 text-copperwood drop-shadow-sm" />
+                    </motion.div>
                     <div>
-                        <h2 className="text-lg font-bold text-black-forest tracking-tight">Market Trends</h2>
-                        <p className="text-xs text-black-forest/50 font-medium">Historical 5-year Yolo County Averages</p>
+                        <h2 className="text-[13px] font-bold text-black-forest tracking-tight uppercase flex items-center gap-2">
+                            Market Trends
+                        </h2>
+                        <p className="text-[10px] text-black-forest/50 font-medium">Historical 5-year Yolo County Averages</p>
                     </div>
                 </div>
                 
-                {!isLoading && data.length > 0 && (
-                    <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-sage/20 rounded-full text-black-forest/70 shadow-inner">
-                        <TrendingUp className="w-3.5 h-3.5 text-green-600" />
-                        <span>Tomatoes +62% (5yr)</span>
-                    </div>
-                )}
+                <div className="flex items-center gap-1.5 h-8">
+                    {!isLoading && data.length > 0 && (
+                        <div className="relative w-36 h-6 overflow-hidden rounded-md mr-1">
+                            <AnimatePresence initial={false}>
+                                <motion.div
+                                    key={tickerIndex}
+                                    initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -15, scale: 0.95 }}
+                                    transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 25 }}
+                                    className={`absolute inset-0 flex items-center justify-between px-2 py-1 text-[10px] font-bold rounded-md shadow-inner ${TICKER_DATA[tickerIndex].bg}`}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        {React.createElement(TICKER_DATA[tickerIndex].icon, { className: `w-3 h-3 ${TICKER_DATA[tickerIndex].color}` })}
+                                        <span className="text-black-forest/80 uppercase tracking-widest">{TICKER_DATA[tickerIndex].name}</span>
+                                    </div>
+                                    <span className={`${TICKER_DATA[tickerIndex].color}`}>{TICKER_DATA[tickerIndex].trend}</span>
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
+                    )}
+                    <motion.button
+                        whileHover={{ scale: 1.1, backgroundColor: "rgba(0,0,0,0.05)" }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setExpanded(!expanded)}
+                        className="clay-button w-7 h-7 rounded-lg flex items-center justify-center text-black-forest/40 hover:text-olive-leaf transition-colors"
+                        aria-label={expanded ? 'Collapse' : 'Expand'}
+                    >
+                        {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </motion.button>
+                </div>
             </div>
 
-            <div className="flex-1 w-full relative min-h-0 pl-0 sm:pl-2">
-                <AnimatePresence>
+            <AnimatePresence mode="sync">
+                {expanded && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 350, marginTop: 16 }}
+                        exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 28 }}
+                        className="w-full relative min-h-0 pl-0 sm:pl-2"
+                    >
                     {isLoading ? (
                         <motion.div 
                             initial={{ opacity: 0 }}
@@ -170,15 +225,49 @@ export default function MarketTrends({ apiUrl }) {
                                         animationDelay={600}
                                         animationEasing="ease-out"
                                     />
+                                    <Line 
+                                        type="monotone" 
+                                        dataKey="Rice ($/cwt)" 
+                                        stroke="#EAB308" // Yellow/Gold
+                                        strokeWidth={3} 
+                                        dot={{ r: 4, fill: '#EAB308', strokeWidth: 2, stroke: '#fff' }}
+                                        activeDot={{ r: 6, strokeWidth: 0, fill: '#EAB308' }}
+                                        animationDuration={2000}
+                                        animationDelay={700}
+                                        animationEasing="ease-out"
+                                    />
+                                    <Line 
+                                        type="monotone" 
+                                        dataKey="Corn ($/bu)" 
+                                        stroke="#F59E0B" // Amber
+                                        strokeWidth={3} 
+                                        dot={{ r: 4, fill: '#F59E0B', strokeWidth: 2, stroke: '#fff' }}
+                                        activeDot={{ r: 6, strokeWidth: 0, fill: '#F59E0B' }}
+                                        animationDuration={2000}
+                                        animationDelay={800}
+                                        animationEasing="ease-out"
+                                    />
+                                    <Line 
+                                        type="monotone" 
+                                        dataKey="Wheat ($/bu)" 
+                                        stroke="#10B981" // Emerald
+                                        strokeWidth={3} 
+                                        dot={{ r: 4, fill: '#10B981', strokeWidth: 2, stroke: '#fff' }}
+                                        activeDot={{ r: 6, strokeWidth: 0, fill: '#10B981' }}
+                                        animationDuration={2000}
+                                        animationDelay={900}
+                                        animationEasing="ease-out"
+                                    />
                                 </LineChart>
                             </ResponsiveContainer>
                         </motion.div>
                     )}
-                </AnimatePresence>
-            </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             
             {/* Claymorphism Shine Overlay */}
-            <div className="absolute inset-0 rounded-[2rem] pointer-events-none border border-white/40 mix-blend-overlay" />
+            <div className="absolute inset-0 pointer-events-none mix-blend-overlay border border-white/50 rounded-2xl" />
         </div>
     );
 }

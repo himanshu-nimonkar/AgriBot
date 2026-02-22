@@ -282,11 +282,15 @@ Return ONLY a valid JSON object (no markdown, no explanation) with these exact k
 
         image_part = types.Image(image_bytes=image_bytes, mime_type=mime_type)
 
+        # Let's import httpx locally or globally to download the file uri since Video obj has no .save
+        import httpx
+        api_key = client._api_key if hasattr(client, '_api_key') else None
+        
         # Try various Veo models available in the current environment
         veo_models = (
+            "veo-2.0-generate-001",
             "veo-3.1-generate-preview",
             "veo-3.0-generate-001",
-            "veo-2.0-generate-001",
         )
         
         last_error = None
@@ -335,12 +339,22 @@ Return ONLY a valid JSON object (no markdown, no explanation) with these exact k
         if not generated:
             raise RuntimeError("Veo returned no videos")
 
-        # Download video file
+        # Download video file via its URI since the object has no .save() method
         video_file = generated[0].video
-        client.files.download(file=video_file)
-
         out_path = os.path.join(self.VIDEO_DIR, f"{job.job_id}.mp4")
-        video_file.save(out_path)
+        
+        headers = {}
+        if api_key:
+            headers["x-goog-api-key"] = api_key
+            
+        try:
+            with httpx.stream("GET", video_file.uri, headers=headers, follow_redirects=True, timeout=30.0) as response:
+                response.raise_for_status()
+                with open(out_path, "wb") as f:
+                    for chunk in response.iter_bytes(chunk_size=8192):
+                        f.write(chunk)
+        except Exception as e:
+            raise RuntimeError(f"Failed to download generated video from URI {video_file.uri}: {e}")
 
         job.video_path = out_path
         job.video_url = f"/api/field-vision/video/{job.job_id}"
