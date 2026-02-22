@@ -38,7 +38,7 @@ export default function YieldPrediction({ satelliteData, weatherData, apiUrl }) 
     }
 
     const CROP_OPTIONS = [
-        { id: 'tomatoes', label: 'Processing Tomatoes' },
+        { id: 'tomatoes', label: 'Tomato' },
         { id: 'almonds', label: 'Almonds' },
         { id: 'walnuts', label: 'Walnuts' },
         { id: 'rice', label: 'Rice' },
