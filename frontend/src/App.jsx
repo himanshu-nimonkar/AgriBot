@@ -49,14 +49,17 @@ const ChartSkeleton = () => (
 
 const getApiBaseUrl = () => {
     const params = new URLSearchParams(window.location.search)
-    const override = params.get('api_url')
+    let override = params.get('api_url')
 
     if (override) {
+        // If it doesn't start with http/https, assume https (most common for tunnels)
+        if (!override.startsWith('http')) {
+            override = 'https://' + override
+        }
+
         try {
-            const parsed = new URL(override, window.location.origin)
-            if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-                return parsed.origin + parsed.pathname.replace(/\/+$/, '')
-            }
+            const parsed = new URL(override)
+            return parsed.origin + parsed.pathname.replace(/\/+$/, '')
         } catch {
             console.warn('Invalid api_url parameter, using default')
         }
