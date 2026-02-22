@@ -20,10 +20,21 @@ function LocationMarker({ position, setPosition }) {
 
     useEffect(() => {
         if (position && Array.isArray(position) && position.length >= 2) {
-            const lat = Number(position[0]);
-            const lon = Number(position[1]);
+            const lat = parseFloat(position[0]);
+            const lon = parseFloat(position[1]);
+            
             if (!isNaN(lat) && !isNaN(lon)) {
-                map.flyTo([lat, lon], 16, { duration: 1.5 })
+                try {
+                    // Check if we already are at this position to avoid redundant flyTo
+                    const currentCenter = map.getCenter();
+                    if (Math.abs(currentCenter.lat - lat) > 0.0001 || Math.abs(currentCenter.lng - lon) > 0.0001) {
+                        console.log(`[Map] Flying to: ${lat}, ${lon}`);
+                        map.flyTo([lat, lon], 16, { duration: 1.5 });
+                    }
+                } catch (err) {
+                    console.warn('[Map] flyTo failed, using setView fallback:', err);
+                    map.setView([lat, lon], 16);
+                }
             }
         }
     }, [position, map])
