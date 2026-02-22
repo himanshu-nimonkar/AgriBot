@@ -4,8 +4,8 @@ import { useState } from 'react'
 
 function CallModal({ isOpen, onClose, onShowToast }) {
     const [copied, setCopied] = useState(false)
-    const phoneNumber = '+1 (530) 508 3120'
-    const phoneRaw = '+15305083120'
+    const phoneNumber = '+1 (530) 508 3132'
+    const phoneRaw = '+15305083132'
 
     const handleCopy = async () => {
         try {
