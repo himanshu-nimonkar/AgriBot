@@ -123,8 +123,11 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
 
     // BOUNDARY CALCULATION: Create a rectangle around the center
     const fieldBounds = useMemo(() => {
-        const lat = position[0]
-        const lon = position[1]
+        const lat = parseFloat(position?.[0])
+        const lon = parseFloat(position?.[1])
+        
+        if (isNaN(lat) || isNaN(lon)) return null;
+
         // Approx 1km box
         return [
             [lat - 0.0045, lon - 0.0055], // SouthWest
@@ -202,6 +205,7 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
         <div className="relative w-full h-full z-0">
              {/* Map Instance */}
             <MapContainer
+                key={`map-${validCenter[0]}-${validCenter[1]}`}
                 center={validCenter}
                 zoom={15}
                 scrollWheelZoom={false} // Better for page scroll
@@ -244,7 +248,7 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
 
                 {/* 4. Field Boundary Rectangle (Fallback) */}
                 {/* Shows if specific satellite tiles aren't available but layer is active */}
-                {((activeLayer === 'ndvi' && !satelliteData?.tile_url) || 
+                {fieldBounds && ((activeLayer === 'ndvi' && !satelliteData?.tile_url) || 
                   (activeLayer === 'moisture' && !satelliteData?.ndwi_tile_url) || 
                   activeLayer === 'soil' || activeLayer === 'elevation') && (
                     <Rectangle
