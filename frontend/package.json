@@ -9,7 +9,7 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "dompurify": "^3.3.1",
+        "dompurify": "^3.3.3",
         "framer-motion": "^12.29.2",
         "html2canvas": "^1.4.1",
         "html2pdf.js": "^0.14.0",
