@@ -5,7 +5,7 @@ websockets==12.0
 python-multipart==0.0.22
 
 # LangChain for Agent Orchestration
-langchain==0.2.5
+langchain==1.3.9
 langchain-community==0.2.5
 
 # PDF Parsing
