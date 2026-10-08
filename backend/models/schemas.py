@@ -20,19 +20,6 @@ class AnalyzeRequest(BaseModel):
     session_id: Optional[str] = Field("default", description="Session ID for context retention")
 
 
-class VapiMessage(BaseModel):
-    """Vapi webhook message structure."""
-    type: str
-    call: Optional[Dict[str, Any]] = None
-    message: Optional[Dict[str, Any]] = None
-    
-
-class VapiTranscript(BaseModel):
-    """Transcribed speech from Vapi."""
-    role: str  # "user" or "assistant"
-    transcript: str
-    
-    
 # ==================
 # Response Schemas
 # ==================

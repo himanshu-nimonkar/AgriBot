@@ -90,11 +90,14 @@ class ConnectionManager:
     
     async def broadcast(self, message: dict):
         """Send message to all connected clients."""
+        # default=str: payloads contain datetimes, which plain send_json() cannot serialise
+        # (that used to raise, get swallowed, and silently drop the dashboard connection).
+        text = json.dumps(message, default=str)
         disconnected = set()
-        for connection in self.active_connections:
+        for connection in list(self.active_connections):
             try:
-                await connection.send_json(message)
-            except:
+                await connection.send_text(text)
+            except Exception:
                 disconnected.add(connection)
         
         # Clean up disconnected clients
@@ -126,6 +129,14 @@ async def lifespan(app: FastAPI):
             print(f"[WARNING] Rate Limiter failed to initialize: {e}")
     else:
         print("[INFO] Rate Limiter disabled (No REDIS_URL)")
+
+    # Pre-authenticate Earth Engine in the background so the first phone question
+    # doesn't pay the auth handshake.
+    try:
+        from services.geospatial import gee_service as _gee
+        asyncio.get_running_loop().run_in_executor(None, _gee.initialize)
+    except Exception as e:
+        print(f"[WARNING] GEE warm-up skipped: {e}")
 
     # Initialize services
     yield
@@ -466,249 +477,8 @@ async def morph_warpgrep_search(request: Request):
 
 
 # ==================
-# Vapi Webhook
-# ==================
-
-@app.post("/webhook/vapi")
-async def vapi_webhook(request: Request):
-    """
-    Webhook for Vapi.ai voice calls.
-    
-    Handles various Vapi events:
-    - assistant-request: Configure assistant
-    - function-call: Process function calls
-    - end-of-call-report: Log call completion
-    """
-    try:
-        body = await request.json()
-        message_type = body.get("message", {}).get("type", "")
-        
-        # Handle assistant request - configure the assistant
-        if message_type == "assistant-request":
-            return JSONResponse({
-                "assistant": {
-                    "name": "Deep-Ag Copilot",
-                    "firstMessage": "Hello! I'm Deep-Ag Copilot, your agricultural advisor for Yolo County. How can I help you today?",
-                    "transcriber": {
-                        "provider": "deepgram",
-                        "model": "nova-2",
-                        "language": "en-US",
-                        "smart_format": True
-                    },
-                    "voice": {
-                        "provider": "11labs",
-                        "voiceId": "ErXwobaYiN019PkySvjV",
-                        "stability": 0.5,
-                        "similarityBoost": 0.75
-                    },
-                    "model": {
-                        "provider": "custom-llm",
-                        "url": f"https://{request.headers.get('host')}/api/vapi-llm",
-                        "model": "deep-ag-copilot"
-                    },
-                    "silenceTimeoutSeconds": 30,
-                    "maxDurationSeconds": 600,
-                    "backgroundSound": "office"
-                }
-            })
-        
-        # Handle transcript events
-        if message_type == "transcript":
-            transcript = body.get("message", {}).get("transcript", "")
-            role = body.get("message", {}).get("role", "user")
-            
-            # Broadcast to dashboard
-            await manager.broadcast({
-                "type": "transcript",
-                "payload": {"role": role, "text": transcript},
-                "timestamp": datetime.now().isoformat()
-            })
-        
-        # Handle function calls from Vapi
-        if message_type == "function-call":
-            function_call = body.get("message", {}).get("functionCall", {})
-            function_name = function_call.get("name", "")
-            parameters = function_call.get("parameters", {})
-            
-            if function_name == "analyze_field":
-                # Process the agricultural query
-                response = await reasoning_engine.process_query(
-                    query=parameters.get("query", ""),
-                    lat=parameters.get("lat"),
-                    lon=parameters.get("lon"),
-                    crop=parameters.get("crop")
-                )
-                
-                return JSONResponse({
-                    "result": response.voice_response
-                })
-        
-        # Handle end of call
-        if message_type == "end-of-call-report":
-            call_data = body.get("message", {})
-            print(f"Call ended. Duration: {call_data.get('durationSeconds', 0)}s")
-        
-        return JSONResponse({"status": "ok"})
-        
-    except Exception as e:
-        # Log full error internally but don't expose details to client
-        import traceback
-        print(f"Vapi webhook error: {traceback.format_exc()}")
-        return JSONResponse({"status": "error", "message": "Internal server error"}, status_code=500)
-
-
-@app.post("/api/vapi-llm", dependencies=[Depends(SafeRateLimiter(times=100, seconds=60))])
-async def vapi_llm_endpoint(request: Request):
-    """
-    Custom LLM endpoint for Vapi.
-    
-    Vapi sends conversation history, we process and respond.
-    """
-    try:
-        body = await request.json()
-        messages = body.get("messages", [])
-        stream = body.get("stream", False)
-        
-        # Get the last user message
-        user_message = ""
-        for msg in reversed(messages):
-            if msg.get("role") == "user":
-                user_message = msg.get("content", "")
-                break
-        
-        # Extract Call ID for session tracking
-        call_data = body.get("call", {})
-        session_id = call_data.get("id", "default-vapi")
-        
-        if not user_message:
-            user_message = "Hello"
-        
-        print(f"[INFO] Vapi User Message ({session_id}): {user_message}")
-        start_time = datetime.now()
-
-        # Always stream to handle latency gracefully
-        async def event_generator():
-            chunk_id = f"chatcmpl-{int(datetime.now().timestamp())}"
-            created = int(datetime.now().timestamp())
-            model = "deep-ag-copilot"
-
-            def make_chunk(text, finish_reason=None):
-                return {
-                    "id": chunk_id,
-                    "object": "chat.completion.chunk",
-                    "created": created,
-                    "model": model,
-                    "choices": [{
-                        "index": 0,
-                        "delta": {"content": text} if text else {},
-                        "finish_reason": finish_reason
-                    }]
-                }
-
-            # 1. IMMEDIATE FEEDBACK (0s)
-            # Acknowledge receipt instantly to stop silence.
-            initial_fillers = [
-                "I'm accessing the agricultural database for your location...",
-                "Let me check the latest satellite and weather data for you...",
-                "Checking field conditions..."
-            ]
-            import random
-            initial_msg = random.choice(initial_fillers) + " "
-            yield f"data: {json.dumps(make_chunk(initial_msg))}\n\n"
-            
-            # Start actual heavy processing
-            processing_task = asyncio.create_task(reasoning_engine.process_query(
-                query=user_message,
-                session_id=session_id
-            ))
-            
-            # 2. PERIODIC UPDATES (Keep-alive + Status)
-            wait_start = datetime.now()
-            status_updates = [
-                "I am now analyzing the recent satellite imagery for your field.",
-                "I am reviewing the soil moisture levels to check for water stress.",
-                "I am cross-referencing this data with the upcoming weather forecast.",
-                "I am formulating the best recommendation for your crop."
-            ]
-            update_index = 0
-            
-            while not processing_task.done():
-                await asyncio.sleep(0.5)
-                elapsed = (datetime.now() - wait_start).total_seconds()
-                
-                # Update every 5 seconds to allow full sentence to be spoken
-                if elapsed > (update_index + 1) * 5.0 and update_index < len(status_updates):
-                    # Send a complete sentence
-                    update_text = status_updates[update_index] + " "
-                    yield f"data: {json.dumps(make_chunk(update_text))}\n\n"
-                    update_index += 1
-                
-                # Technical keep-alive (every 2s to be safe)
-                if int(elapsed * 10) % 20 == 0: 
-                    yield f": keep-alive {elapsed}\n\n"
-            
-            # 3. FINAL RESULT
-            response = await processing_task
-            duration = (datetime.now() - start_time).total_seconds()
-            print(f"[INFO] Vapi Response ({duration:.2f}s) Ready")
-
-            # Calculate what we've already said (fillers)
-            # The LLM response usually assumes it's the start. 
-            # We might want to preface it with "Here is what I found:" or just output it.
-            # But since we already said "Formulating recommendation...", we can just output the result.
-            
-            # Broadcast to Dashboard
-            payload = asdict(response)
-            payload["full"] = response.full_response
-            payload["voice"] = response.voice_response
-            await manager.broadcast({
-                "type": "response",
-                "payload": payload,
-                "timestamp": datetime.now().isoformat()
-            })
-
-            # Send the actual answer
-            final_text = response.voice_response
-            yield f"data: {json.dumps(make_chunk(final_text))}\n\n"
-            
-            # Finish
-            yield f"data: {json.dumps(make_chunk(None, 'stop'))}\n\n"
-            yield "data: [DONE]\n\n"
-
-        return StreamingResponse(
-            event_generator(), 
-            media_type="text/event-stream",
-            headers={
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-                "X-Accel-Buffering": "no"
-            }
-        )
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print(f"Vapi LLM Error: {e}")
-        error_msg = " I apologize, but I encountered an error while retrieving the data. Please try again."
-        return JSONResponse({
-            "choices": [{
-                "message": {
-                    "role": "assistant",
-                    "content": error_msg
-                }
-            }]
-        })
-
-
-# ==================
 # WebSocket Endpoint
 # ==================
-
-@app.post("/api/vapi-llm/chat/completions")
-async def vapi_llm_chat_completions(request: Request):
-    # Alias for /api/vapi-llm to handle Vapi's automatic path appending.
-    return await vapi_llm_endpoint(request)
-
 
 @app.websocket("/ws/dashboard")
 async def websocket_endpoint(websocket: WebSocket):

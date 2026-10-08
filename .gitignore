@@ -18,3 +18,8 @@ backend/config/*.json
 
 .vscode
 cloudflared.exe
+
+# Voice call logs (endedReason per call)
+backend/call_logs/
+.pytest_cache/
+!.env.example

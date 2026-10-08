@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 dotenv_path = os.path.join(os.path.dirname(__file__), "../../.env")
 load_dotenv(dotenv_path=dotenv_path)
 
-VAPI_PRIVATE_KEY = os.getenv("VAPI_PRIVATE_KEY")
 AGRIBOT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 BACKEND_DIR = os.path.join(AGRIBOT_ROOT, "backend")
 FRONTEND_DIR = os.path.join(AGRIBOT_ROOT, "frontend")
@@ -80,50 +79,6 @@ def update_frontend_and_deploy(public_url):
         print(f"[ERROR] Deployment Failed: {e}")
         return False
 
-def update_vapi(public_url):
-    if not VAPI_PRIVATE_KEY:
-        print("[WARNING] VAPI_PRIVATE_KEY not found. Skipping Vapi update.")
-        return
-
-    print(f"[INFO] Updating Vapi Webhook...")
-    headers = {"Authorization": f"Bearer {VAPI_PRIVATE_KEY}", "Content-Type": "application/json"}
-    
-    try:
-        resp = requests.get("https://api.vapi.ai/assistant", headers=headers)
-        if resp.status_code == 200:
-            assistants = resp.json()
-            target_assistant = None
-            for a in assistants:
-                if a.get("name") == "Deep-Ag Copilot" or a.get("name") == "AgriBot":
-                    target_assistant = a
-                    break
-            
-            if not target_assistant and assistants: target_assistant = assistants[0]
-                
-            if target_assistant:
-                ass_id = target_assistant["id"]
-                patch_url = f"https://api.vapi.ai/assistant/{ass_id}"
-                
-                # Update BOTH serverUrl (for webhooks) AND model.url (for Custom LLM)
-                payload = {
-                    "serverUrl": f"{public_url}/webhook/vapi",
-                    "model": {
-                        "provider": "custom-llm",
-                        "url": f"{public_url}/api/vapi-llm/chat/completions",
-                        "model": "gpt-3.5-turbo" # Ensure model is kept set
-                    }
-                }
-                
-                patch_resp = requests.patch(patch_url, json=payload, headers=headers)
-                if patch_resp.status_code == 200:
-                    print(f"[SUCCESS] Vapi Configured: {target_assistant.get('name')}")
-                else:
-                    print(f"[ERROR] Vapi Update Failed: {patch_resp.text}")
-            else:
-                print("[WARNING] No Assistant found.")
-    except Exception as e:
-        print(f"[WARNING] Vapi Error: {e}")
-
 def start_local_frontend():
     print("[INFO] Starting Local Dashboard...")
     # npm run dev
@@ -161,7 +116,6 @@ def main():
             print("\n" + "="*60)
             print("[SUCCESS] SYSTEM READY!")
             print("1. Backend & Tunnel: Running")
-            print("2. Vapi Voice: Connected")
             print("3. OPEN DASHBOARD: http://localhost:5173")
             print("   (Use this local link. The .pages.dev one may be outdated)")
             print("="*60 + "\n")

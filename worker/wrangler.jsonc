@@ -1,0 +1,43 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "agribot",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Workers AI: LLM (Llama), streaming speech-to-text (Flux), text-to-speech (Aura/Melo), embeddings
+  "ai": { "binding": "AI" },
+  // UC research passages (index created by scripts/setup-cloudflare.sh)
+  "vectorize": [{ "binding": "KNOWLEDGE", "index_name": "agribot-knowledge", "remote": true }],
+  // Warm weather + precomputed satellite snapshots (free KV)
+  "kv_namespaces": [{ "binding": "SNAPSHOTS", "id": "905b7f4f23fb494bba83c8ee4ef529b9" }],
+
+  // Session memory (SQLite-backed Durable Objects are available on the free plan)
+  "durable_objects": {
+    "bindings": [
+      { "name": "AgriAgent", "class_name": "AgriAgent" },
+      { "name": "Governor", "class_name": "Governor" },
+      { "name": "VapiBrain", "class_name": "VapiBrain" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["AgriAgent", "Governor"] },
+    { "tag": "v2", "new_sqlite_classes": ["PhoneCall"] },
+    { "tag": "v3", "new_sqlite_classes": ["VapiBrain"], "deleted_classes": ["PhoneCall"] }
+  ],
+
+  // The React dashboard is served by the same Worker (free static assets) -> one URL, no tunnel
+  "assets": {
+    "directory": "../frontend/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/agents/*", "/webhook/*", "/health"]
+  },
+
+  "triggers": { "crons": ["7 * * * *"] },
+  "vars": {
+    "AI_GATEWAY_ID": "agribot",
+    "DAILY_NEURON_BUDGET": "10000"
+  },
+  "observability": { "enabled": true }
+}

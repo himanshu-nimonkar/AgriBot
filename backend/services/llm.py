@@ -60,7 +60,7 @@ class CloudflareLLMService:
         Returns:
             Generated text
         """
-        url = f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}/ai/run/{self.MODEL}"
+        url = f"{settings.cf_api_base}/accounts/{self.account_id}/ai/run/{self.MODEL}"
         
         messages = []
         

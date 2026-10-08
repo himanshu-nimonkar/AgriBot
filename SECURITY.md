@@ -32,7 +32,7 @@ We actively maintain security updates for the following versions:
    - Safe rate limiter fallback for lightweight deployments
 
 2. **Authentication & Authorization**
-   - Vapi.ai private key authentication for voice calls
+   - Optional shared access code (`ACCESS_CODE`) on the Cloudflare Worker protects voice and chat
    - Cloudflare API token for AI inference and vectorization
    - Google Earth Engine service account authentication
    - WebSocket connection validation
@@ -46,14 +46,14 @@ We actively maintain security updates for the following versions:
 4. **Third-Party Services**
    - Google Earth Engine (satellite imagery)
    - Cloudflare Workers AI (LLM inference)
-   - Vapi.ai (voice interface)
+   - Cloudflare Workers AI (speech, language model, embeddings)
    - OpenMeteo (weather data)
 
 ### Known Security Considerations
 
 - **Credential Management**: Service account keys and API tokens stored in `.env` files
 - **Public Endpoints**: WebSocket connections for real-time dashboard updates
-- **Voice Interface**: PSTN calls routed through Vapi.ai infrastructure
+- **Voice Interface**: in-app WebRTC-style audio over an encrypted WebSocket straight to a Cloudflare Worker (no telephony carrier)
 - **Dependency Chain**: 40+ Python packages including ML frameworks
 
 ---
@@ -131,7 +131,7 @@ backend/config/indigo-splice-485617-j0-873f46d5b26f.json  # GEE credentials
 
 # Use environment variables or secret managers
 export CLOUDFLARE_API_TOKEN="secure_token"
-export VAPI_PRIVATE_KEY="secure_key"
+export CLOUDFLARE_API_TOKEN="secure_key"   # least-privilege token (Workers, Vectorize, KV, AI)
 export GEE_SERVICE_ACCOUNT_FILE="/secure/path/to/credentials.json"
 ```
 
@@ -173,7 +173,7 @@ The following are **NOT** considered security vulnerabilities:
 
 - Rate limiting bypasses in development/local mode (when Redis is disabled)
 - Geospatial data accuracy or crop recommendations (agronomic issues)
-- Third-party service outages (Google Earth Engine, Cloudflare, Vapi.ai)
+- Third-party service outages (Google Earth Engine, Cloudflare)
 - Browser-specific rendering issues
 - Performance degradation under extreme load without DoS attack evidence
 - Reports from automated scanners without validated proof of concept

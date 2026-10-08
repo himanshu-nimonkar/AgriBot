@@ -9,6 +9,7 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "agents": "^0.26.0",
         "dompurify": "^3.3.1",
         "framer-motion": "^12.29.2",
         "html2canvas": "^1.4.1",

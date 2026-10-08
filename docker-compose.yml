@@ -27,9 +27,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID}
       - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
-      - VAPI_PRIVATE_KEY=${VAPI_PRIVATE_KEY}
-      - VAPI_PUBLIC_KEY=${VAPI_PUBLIC_KEY}
-      - GEE_SERVICE_ACCOUNT_FILE=/app/backend/config/indigo-splice-485617-j0-873f46d5b26f.json
+      - GEE_SERVICE_ACCOUNT_FILE=/app/backend/config/agribot-485617.json
     volumes:
       - ./backend:/app/backend  # Hot reload logic
       - ./data:/app/data        # Data persistence
@@ -44,7 +42,7 @@ services:
     command: celery -A backend.worker.celery_app worker --loglevel=info
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - GEE_SERVICE_ACCOUNT_FILE=/app/backend/config/indigo-splice-485617-j0-873f46d5b26f.json
+      - GEE_SERVICE_ACCOUNT_FILE=/app/backend/config/agribot-485617.json
       # Pass other env vars similarly
       - CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID}
       - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}

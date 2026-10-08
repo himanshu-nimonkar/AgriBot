@@ -329,6 +329,58 @@ class GEEService:
             is_mock=False
         )
 
+    async def get_quick_snapshot(self, lat: float, lon: float, radius_m: int = 500) -> Optional[Dict[str, Any]]:
+        """
+        Latency-optimised satellite snapshot for the voice path.
+
+        One Earth Engine round trip (latest Sentinel-2 scene -> NDVI + NDWI +
+        scene date) instead of the ~8 sequential getInfo() calls that the full
+        analytics need. Returns None when Earth Engine is unavailable or has no
+        recent clear scene; it never returns invented numbers.
+        """
+        import asyncio
+        return await asyncio.to_thread(self._quick_snapshot_sync, lat, lon, radius_m)
+
+    def _quick_snapshot_sync(self, lat: float, lon: float, radius_m: int) -> Optional[Dict[str, Any]]:
+        self.initialize()
+        if self._mock_mode:
+            return None
+        try:
+            area = self._get_buffer(lat, lon, radius_m)
+            today = datetime.now()
+            collection = self._get_sentinel2_collection(
+                area,
+                (today - timedelta(days=45)).strftime("%Y-%m-%d"),
+                today.strftime("%Y-%m-%d"),
+            )
+            image = ee.Image(collection.sort("system:time_start", False).first())
+            # NDMI (NIR vs SWIR) is the canopy-moisture index. NDWI (green vs NIR) is strongly NEGATIVE over healthy
+            # vegetation, so it must not be read as "water stress".
+            bands = (
+                image.normalizedDifference(["B8", "B4"]).rename("NDVI")
+                .addBands(image.normalizedDifference(["B3", "B8"]).rename("NDWI"))
+                .addBands(image.normalizedDifference(["B8", "B11"]).rename("NDMI"))
+            )
+            stats = ee.Dictionary(
+                bands.reduceRegion(reducer=ee.Reducer.mean(), geometry=area, scale=10, maxPixels=1e9)
+            ).set("t", image.get("system:time_start")).getInfo()
+
+            ndvi, ndwi, ndmi, t = stats.get("NDVI"), stats.get("NDWI"), stats.get("NDMI"), stats.get("t")
+            if ndvi is None or ndwi is None or ndmi is None:
+                return None
+            # Canopy moisture: >=0.2 well watered, 0-0.2 drying, <0 dry / bare (crop stage matters)
+            stress = "low" if ndmi >= 0.2 else "moderate" if ndmi >= 0.0 else "severe"
+            return {
+                "ndvi": round(float(ndvi), 3),
+                "ndwi": round(float(ndwi), 3),
+                "ndmi": round(float(ndmi), 3),
+                "water_stress_level": stress,
+                "image_date": datetime.utcfromtimestamp(t / 1000).strftime("%Y-%m-%d") if t else None,
+            }
+        except Exception as e:
+            print(f"[GEE] quick snapshot unavailable: {e}")
+            return None
+
     async def get_ndvi_timeline(
         self,
         lat: float,

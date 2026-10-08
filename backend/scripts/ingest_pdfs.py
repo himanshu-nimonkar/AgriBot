@@ -4,7 +4,7 @@ import json
 import asyncio
 import httpx
 from pathlib import Path
-from PyPDF2 import PdfReader
+from pypdf import PdfReader  # pypdf is in requirements.txt (PyPDF2 is not)
 from dotenv import load_dotenv
 
 # Load Environment Variables from project root
@@ -13,7 +13,7 @@ load_dotenv(env_path)
 
 CLOUDFLARE_ACCOUNT_ID = os.environ.get("CLOUDFLARE_ACCOUNT_ID")
 CLOUDFLARE_API_TOKEN = os.environ.get("CLOUDFLARE_API_TOKEN")
-VECTORIZE_INDEX = "agribot-knowledge"
+VECTORIZE_INDEX = os.environ.get("CLOUDFLARE_VECTORIZE_INDEX", "agribot-knowledge")
 EMBEDDING_MODEL = "@cf/baai/bge-base-en-v1.5"
 
 # Setup Headers
@@ -169,7 +169,7 @@ async def main():
                         vectors_payload.append({
                             "id": c["id"],
                             "values": emb,
-                            "namespace": "default", # Optional, but good practice
+                            # NOTE: no "namespace" - queries without a namespace only see vectors stored without one
                             "metadata": c["metadata"]
                         })
                 

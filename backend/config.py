@@ -35,12 +35,9 @@ class Settings(BaseSettings):
     # Morph LLM (additive integration)
     morph_api_key: str = ""
     
-    # Vapi.ai
-    vapi_private_key: str = ""
-    vapi_public_key: str = ""
-    vapi_phone_number_id: str = ""
-    vapi_phone_number: str = ""
-    
+    # Cloudflare REST base (overridable for tests)
+    cf_api_base: str = "https://api.cloudflare.com/client/v4"
+
     # Yolo County defaults
     yolo_county_lat: float = 38.7646
     yolo_county_lon: float = -121.9018
