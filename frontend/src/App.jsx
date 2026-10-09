@@ -596,7 +596,19 @@ function App() {
                 })
             })
 
-            const data = await response.json()
+            const data = await response.json().catch(() => ({}))
+
+            if (!response.ok || !data.full_response) {
+                const reason = response.status === 401 || response.status === 403
+                    ? 'This assistant needs an access code. Open the link you were given (it ends in ?code=...) and try again.'
+                    : data.full_response || data.detail || 'I encountered an error while processing this request.'
+                setMessages((prev) => [...prev, {
+                    role: 'assistant',
+                    content: String(reason),
+                    timestamp: new Date().toISOString()
+                }])
+                return
+            }
 
             if (data.weather_data) setWeatherData(data.weather_data)
             if (data.satellite_data) setSatelliteData((prev) => ({ ...prev, ...data.satellite_data }))
@@ -616,7 +628,7 @@ function App() {
                 role: 'assistant',
                 content: data.full_response,
                 sources: data.sources,
-                timestamp: data.timestamp
+                timestamp: data.timestamp || new Date().toISOString()
             }])
         } catch (error) {
             console.error(error)
