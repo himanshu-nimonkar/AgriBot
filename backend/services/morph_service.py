@@ -7,7 +7,6 @@ Additive to existing Cloudflare pipeline — never replaces existing services.
 import asyncio
 import httpx
 import json
-import subprocess
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 import os
@@ -57,10 +56,10 @@ class MorphService:
 
     BASE_URL = "https://api.morphllm.com/v1"
     RERANK_MODEL = "morph-rerank-v4"
-    WARPGREP_MODEL = "morph-warp-grep-v1"
+    WARPGREP_MODEL = "morph-warp-grep-v2.1"
     
-    # Path to Node.js router bridge script
-    ROUTER_BRIDGE_PATH = os.path.join(os.path.dirname(__file__), "morph_router_bridge.js")
+    # Morph retired its rerank model; the first 404 switches reranking off for the process lifetime.
+    _rerank_available = True
 
     def __init__(self):
         self.api_key = settings.morph_api_key
@@ -95,7 +94,7 @@ class MorphService:
         Rerank search results using Morph's GPU-accelerated reranker.
         Called AFTER Cloudflare Vectorize returns initial results.
         """
-        if not self.enabled or not documents:
+        if not self.enabled or not documents or not self._rerank_available:
             return []
 
         try:
@@ -125,6 +124,13 @@ class MorphService:
             print(f"[Morph Rerank] Reranked {len(documents)} docs → top {len(results)} (scores: {[f'{r.relevance_score:.3f}' for r in results]})")
             return results
 
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                self._rerank_available = False
+                print("[Morph Rerank] Endpoint no longer available; reranking disabled (keeping Vectorize order).")
+            else:
+                print(f"[Morph Rerank] Error (falling back to original order): {e}")
+            return []
         except Exception as e:
             print(f"[Morph Rerank] Error (falling back to original order): {e}")
             return []
@@ -135,50 +141,25 @@ class MorphService:
 
     async def classify_difficulty(self, query: str) -> RouterClassification:
         """
-        Use Morph's Model Router to classify query difficulty.
-        Calls Node.js bridge script that uses official @morphllm/morphsdk.
-        Returns: easy / medium / hard / needs_info
+        Use Morph's Model Router (POST /v1/router/classify) to classify query difficulty.
+        Returns: easy / medium / hard / needs_info ("medium" if the router is unreachable).
         """
         if not self.enabled:
             return RouterClassification(difficulty="unknown")
 
         try:
-            # Run Node.js bridge as subprocess
-            env = os.environ.copy()
-            env["MORPH_API_KEY"] = self.api_key
-            
-            # Run async to not block the event loop
-            process = await asyncio.create_subprocess_exec(
-                "node", self.ROUTER_BRIDGE_PATH, query,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                env=env,
-                cwd=os.path.dirname(self.ROUTER_BRIDGE_PATH)
+            response = await self.client.post(
+                f"{self.BASE_URL}/router/classify",
+                json={"input": query, "classes": ["difficulty"]},
+                timeout=8.0,
             )
-            
-            stdout, stderr = await asyncio.wait_for(
-                process.communicate(), 
-                timeout=15.0
-            )
-            
-            output = stdout.decode("utf-8").strip()
-            if not output:
-                print(f"[Morph Router] Empty response. stderr: {stderr.decode('utf-8', errors='ignore')[:200]}")
-                return RouterClassification(difficulty="medium")
-            
-            data = json.loads(output)
-            difficulty = data.get("difficulty", "medium")
-            
-            if data.get("error"):
-                print(f"[Morph Router] SDK error: {data['error']}. Difficulty: {difficulty}")
-            else:
-                print(f"[Morph Router] Query classified as: {difficulty}")
-            
+            response.raise_for_status()
+            d = (response.json().get("classifications") or {}).get("difficulty") or {}
+            difficulty = d.get("label") or "medium"
+            if d.get("meets_threshold") is False:
+                difficulty = "needs_info"
+            print(f"[Morph Router] Query classified as: {difficulty}")
             return RouterClassification(difficulty=difficulty)
-
-        except asyncio.TimeoutError:
-            print("[Morph Router] Timeout (>15s). Defaulting to 'medium'.")
-            return RouterClassification(difficulty="medium")
         except Exception as e:
             print(f"[Morph Router] Error: {e}. Defaulting to 'medium'.")
             return RouterClassification(difficulty="medium")
