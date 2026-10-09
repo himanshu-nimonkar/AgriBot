@@ -25,22 +25,32 @@ Farmers in Yolo County operate in a high-stakes environment where decision-makin
 
 ## 2. High-Level System Architecture
 
-The system enables a **Real-Time Reasoning Loop** where voice/text input triggers parallel data acquisition from satellites, weather stations, and research databases.
+AgriBot now runs **entirely on Cloudflare's free plan**. No phone carrier, no voice-orchestration vendor, no tunnel, no always-on laptop.
 
-### Architecture Diagram
+```
+ Browser / installed PWA                              Cloudflare (free plan)
+ ┌───────────────────────┐   wss (16 kHz PCM up,    ┌────────────────────────────────────────────────┐
+ │ React dashboard       │   mp3 down) + JSON       │ Worker  ──►  AgriAgent  (Durable Object / session)│
+ │  • "Call Agent" modal │ ───────────────────────► │   routing    │  • VAD cost gate ► Flux STT (stream) │
+ │  • chat box           │   https  /api/analyze    │   auth       │  • instant intent parse (no LLM)    │
+ │  • map / weather cards│ ───────────────────────► │   cron       │  • live data (cache+prefetch)       │
+ └───────────────────────┘                          │              │  • Llama 3.1 8B (stream, interruptible)
+                                                    │              │  • sentence → Aura TTS (cached)     │
+                                                    │              │  • SQLite memory: crop, field, facts,│
+                                                    │              │    advice given, chat+voice history │
+                                                    │  Governor DO: free-tier budget + call limits       │
+                                                    └──────┬─────────────┬───────────────┬───────────────┘
+                                          Workers AI ◄─────┘   Vectorize ◄┘     KV ◄─────┘
+                                  (LLM, STT, TTS, embeddings)  (UC research)  (warm weather,
+                                                                               satellite snapshots)
+```
 
-1.  **Interaction Layer**:
-    - **Voice**: Managed by **Vapi.ai**, routing PSTN calls to the backend via WebSocket.
-    - **Web**: A **React/Vite** dashboard visualizing the "Brain's" state (Satellite Maps, Thinking Logic, citations) alongside a text chat interface.
-2.  **Orchestration Layer**:
-    - **FastAPI Backend**: The central nervous system. It handles intent classification, tool execution, and session state.
-    - **Async Logic**: Uses `asyncio` to execute blocking I/O (Geocoding, GEE, RAG) in parallel to minimize latency.
-3.  **Intelligence Layer**:
-    - **Reasoning Engine**: A customized LLM (Llama 3.1 8B via Cloudflare) that synthesizes data into actionable advice.
-    - **RAG System**: A ChromaDB vector store containing indexed PDF research from UC ANR and UC IPM.
-4.  **Data Layer**:
-    - **Google Earth Engine**: Computes real-time NDVI/NDWI for specific coordinates.
-    - **OpenMeteo**: Provides hyper-local historical and forecast weather data.
+1.  **Interaction layer**: the React dashboard (served by the same Worker as free static assets). *Call Agent* opens a microphone WebSocket straight to the agent; the chat box talks to the *same* agent object, so voice and text share one memory.
+2.  **Agent layer** (`worker/`, TypeScript): one Durable Object per session. Speech-to-text, turn-taking, the reasoning pipeline, text-to-speech and conversation memory all live here (SQLite storage survives reconnects and deploys).
+3.  **Intelligence layer**: Llama 3.1 8B (Workers AI) synthesises answers from live data and UC research retrieved from Vectorize (`bge-base` embeddings).
+4.  **Data layer**: Open-Meteo weather (warmed hourly into KV for every Yolo town by a cron trigger), precomputed Earth Engine NDVI/NDWI snapshots in KV, product labels, prices and local companies bundled in the Worker.
+
+> **Optional extras**: the original Python/FastAPI backend (`backend/`) is no longer part of voice or chat. It still powers the dashboard's Earth Engine map tiles, Field Vision (Gemini/Veo), yield predictor and startup list; run it with `./start_agribot.sh --with-backend` and open the dashboard with `?api_url=<its URL>` if you want those widgets.
 
 ---
 
@@ -59,17 +69,16 @@ The system enables a **Real-Time Reasoning Loop** where voice/text input trigger
 - **Python 3.12.9**: Selected for rich geospatial (GEE) and AI (LangChain) ecosystem.
 - **FastAPI**: High-concurrency async web framework.
 - **Uvicorn**: ASGI Server.
-- **Cloudflare Tunnel**: Exposes the local backend securely to the public internet (Vapi/Web).
 
 ### AI & Data
 
 - **Google Earth Engine (GEE)**: Server-side geospatial computation for satellite imagery.
-- **ChromaDB**: Lightweight, local vector database for RAG (Retrieval-Augmented Generation).
-- **Vapi.ai**: Voice orchestration platform integrating:
-  - **Deepgram Nova-2**: Speech-to-text transcription
-  - **ElevenLabs**: High-quality text-to-speech synthesis
-- **Cloudflare Workers AI**: Low-latency inference using Llama 3.1 8B Instruct Fast model.
-- **Sentence Transformers**: `all-MiniLM-L6-v2` for document embeddings (384 dimensions).
+- **Cloudflare Workers + Durable Objects (SQLite)**: the agent runtime and per-session memory.
+- **Cloudflare Workers AI**: Llama 3.1 8B Instruct Fast (reasoning), Deepgram Flux (streaming speech-to-text with end-of-turn detection), Deepgram Aura / MeloTTS (text-to-speech), `bge-base-en-v1.5` (embeddings).
+- **Cloudflare Vectorize**: UC research index (`agribot-knowledge`, 768-dim cosine).
+- **Cloudflare KV**: warm weather per town and precomputed satellite snapshots.
+- **Cloudflare AI Gateway**: free analytics/rate limiting for text chat.
+- **Agents SDK (`agents/voice`)**: WebSocket voice pipeline (turn-taking, interruption, sentence-level TTS streaming).
 
 ### Additional Dependencies
 
@@ -102,40 +111,116 @@ The Frontend is a **Reactive Visualization Terminal**. It supports two modes of 
 
 ### Design Pattern: Async Tool Orchestration
 
+The **voice and chat brain now lives in the Cloudflare Worker** (`worker/src/brain`, `worker/src/agent.ts`). The Python backend below is the original pipeline, kept for the optional dashboard extras (map tiles, Field Vision, yield predictor).
+
 The backend is structured around **Service Modules** (`services/`) invoked by a central **Reasoning Engine** (`agents/reasoning_engine.py`).
 
 ### Request Lifecycle
 
-1.  **Ingest**: `main.py` receives a text query or Vapi voice webhook.
+1.  **Ingest**: `main.py` receives a text query.
 2.  **Intent Parsing**: The LLM extracts entities (Crop: "Almonds", Location: "Davis").
 3.  **Parallel Execution**:
     - `satellite.py` -> GEE API (Compute NDVI)
     - `weather.py` -> OpenMeteo API (Fetch Forecast)
-    - `rag.py` -> ChromaDB (Search Embeddings)
+    - `rag.py` -> Cloudflare Vectorize (Search Embeddings)
 4.  **Synthesis**: The LLM combines these 3 inputs into a natural language response.
-5.  **Streaming**: The response is streamed to the user (via SSE for Vapi, JSON for Web) with "Filler Phrases" ("Analyzing satellite data...") to mask 10-15s latency.
+5.  **Response**: JSON for the web dashboard. (Live voice and the fast chat path run in the Cloudflare Worker instead.)
 
 ---
 
-## 6. Voice and Vapi Integration
+## 6. Voice (Cloudflare-only)
 
-### Telephony Flow
+Two ways in, same brain, same free budget: **(a)** open the app, tap **Call Agent**, allow the microphone; **(b)** dial the farm's **real phone number** from any phone, no internet needed (section *6b*).
 
-- **Inbound**: User calls the configured Vapi phone number.
-- **Handshake**: Vapi hits `/webhook/vapi`. Backend returns the Assistant Config (System Prompt, Voice ID).
-- **Assistant Configuration**:
-  - **Name**: "Yolo Ag Copilot"
-  - **ID**: `e7f5bb75-932b-43bb-b728-ddeb9c13b54a`
-  - **Voice**: ElevenLabs (`21m00Tcm4TlvDq8ikWAM`)
-  - **Transcriber**: Deepgram Nova-2 (en-US)
-  - **Model**: Custom LLM via Cloudflare Workers AI
-- **Turn-Taking**:
-  - User speaks → Vapi (Deepgram) transcribes.
-  - Backend receives transcript → Generates Stream.
-  - **Timeout**: 30 seconds of silence ends the call.
-  - **Response Delay**: 0.5 seconds to allow natural speech pacing.
+### How a turn works (and where the milliseconds go)
 
----
+| Step | What happens | Typical cost |
+|---|---|---|
+| Speech in | Mic audio streams to the agent over a WebSocket. A small VAD gate forwards only speech to **Flux** (streaming STT), which detects the end of your turn itself. | ~0.2-0.4 s after you stop |
+| Prefetch | While you are still talking, interim transcripts start weather / research lookups (shared in-flight cache, so nothing is fetched twice). | 0 s on the critical path |
+| Understand | Regex intent parse: crop, town, topic. No LLM round trip. | ~0 ms |
+| Data | Weather = KV read (hourly warmed) or live Open-Meteo; research = embed + Vectorize; satellite = KV snapshot. Hard 1.6 s budget; anything slower finishes in the background for the next turn. | 0.0-0.4 s |
+| Think | Llama streams; sentences are cut as they complete. Answers are 1-3 spoken sentences. | first text ~0.4-0.7 s |
+| Speak | Each sentence goes to **Aura** TTS as soon as it exists; short repeated lines are cached. mp3 streams to the browser. | first audio ~0.3-0.8 s |
+
+Measured against the deployed Worker with real spoken audio: **first spoken words 0.7-1.8 s after the caller stops talking (median ~1.2 s)**; a repeated answer starts in ~0.6 s thanks to the TTS cache. A cold first turn of a call is slower.
+
+- **Interruptions**: the browser client stops playback the moment your voice is detected over the assistant; the server aborts the in-flight LLM/TTS work (`AbortSignal`) and, if Flux ends your turn early and you keep talking, the aborted turn is discarded and re-run with the full sentence.
+- **State**: per-session SQLite memory (crop, field location, facts you told it, advice already given, last data digest) plus the full conversation. Voice and chat use the same session id, so "what about walnuts?" works in either.
+- **Never silent**: if the LLM is unreachable the caller gets a deterministic spoken answer built from live data; satellite numbers are only ever real snapshots, never invented.
+- **Dashboard sync**: weather, satellite layer, map pin and sources update live during the call.
+
+### Staying inside the free plan
+
+Workers AI's free allowance is **10,000 neurons/day** (resets 00:00 UTC) and *everything* fails when it is exhausted, so a **Governor** Durable Object tracks an estimate and degrades gracefully:
+
+| Today's estimated spend | Behaviour |
+|---|---|
+| < 55 % | Full-quality Aura voice, 1-3 sentence answers |
+| 55-80 % | Same voice, tighter (<= 30 word) answers |
+| 80-92 % | Cheaper MeloTTS voice (~70x cheaper), tight answers |
+| >= 92 % | No new calls (text chat keeps working until 98 %) |
+
+Rough capacity: one conversational turn costs ~250-350 neurons (speech-in ~90, Aura TTS 200-300, LLM ~10), i.e. **about 30 turns (10-15 minutes of conversation) per day at full quality**, and 100+ turns/day on the cheaper voice. Also free-plan guards: max 3 simultaneous calls, 80 calls/day, 10-minute call cap, and an optional access code so strangers can't spend your budget. If you need more, the Workers Paid plan ($5/mo) raises everything; no code changes needed.
+
+### Setup
+
+```bash
+cp .env.example .env                       # CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_API_TOKEN
+worker/scripts/setup-cloudflare.sh         # Vectorize index, KV namespace, AI Gateway (idempotent)
+python backend/scripts/ingest_pdfs.py      # embed data/research/*.pdf into Vectorize (one time)
+cd worker && npx wrangler secret put ACCESS_CODE   # optional but recommended
+cd .. && ./deploy_cloudflare.sh            # build dashboard + deploy Worker + warm weather
+```
+
+Open `https://agribot.<your-subdomain>.workers.dev/?code=<ACCESS_CODE>` once (the code is remembered). Check the line with `GET /api/voice/status`.
+Test with real audio: `node worker/scripts/e2e-voice.mjs --url wss://<worker-host> --code <code> --wav question.wav`.
+Unit tests: `cd worker && npm test`.
+
+### Satellite data
+
+Earth Engine can't run inside a Worker, and Sentinel-2 only revisits every ~5 days, so run `python backend/scripts/push_satellite_snapshots.py` (add `--full` for 5-year history) once a day; it computes NDVI/NDWI per town and publishes them to KV. Snapshots use **NDVI** (greenness) and **NDMI** (canopy moisture, NIR vs SWIR). NDWI is *not* used as a stress signal: it is strongly negative over healthy vegetation. Without `GEE_SERVICE_ACCOUNT_FILE` the agent truthfully says satellite data isn't available.
+
+## 6b. The phone number (Vapi = call orchestrator only)
+
+The point of the project: a farmer with no data coverage dials a normal number and talks. **Vapi** provides the number and the call plumbing (phone line, speech-to-text, text-to-speech, turn-taking, barge-in); every word it speaks comes from the Cloudflare Worker (`worker/src/vapi/`), because Vapi's model is a *custom LLM* pointing at it. Vapi is the only provider with free voice credits and a free number (everything else, Twilio included, is paid from minute one).
+
+```
+farmer's phone ──PSTN──► Vapi free number ──► Deepgram STT (Vapi) ──► POST /api/vapi-llm/chat/completions ──► Worker
+                                                                       VapiBrain DO (one per caller, salted hash of the number)
+                                                                         SessionBrain: memory + live weather/satellite + UC research
+                                                                         free-tier LLM chain ► sentences streamed back as OpenAI SSE
+ caller hears ◄── ElevenLabs/Vapi TTS (Vapi) ◄────────────────────────────────────────────────────────────────────────────────────┘
+ caller talks over it ► Vapi drops the HTTP stream ► the stream's cancel() aborts the in-flight LLM request
+ live transcripts ► POST /webhook/vapi ► speculative prefetch (weather/research already loading); end-of-call reports ► /api/voice/status
+```
+
+- **State**: same `SessionBrain` as the web chat, persisted per caller. A returning caller keeps their crop and field location ("what about tomorrow?" works across calls); Vapi also sends the whole conversation each turn. Only a salted hash of the number is stored.
+- **Latency**: no filler sentences. Data is prefetched from partial transcripts, weather is warmed in KV, the first sentence streams as soon as it completes. Measured against the deployed Worker: first sentence reaches Vapi ~0.2-1.1 s after the request (excluding Vapi's own speech-to-text/TTS time, ~0.5-0.8 s more).
+- **Never silent**: if every LLM provider fails the caller still hears a short answer built from live data.
+- **Credits**: Vapi gives ~$5-10 of free credit and 1 free number (inbound only, US area codes). Calls cost roughly $0.05/min platform + speech vendors (lean setups ~$0.12/min all-in), i.e. ~50 minutes per $6. Defaults are credit-conscious: Vapi's own voice (not ElevenLabs), no denoising add-on, calls capped at 5 minutes (`--max-seconds`, `--voice-provider 11labs`, `--denoise` to change). After that you pay Vapi, or fall back to the free in-app web call (section 6).
+- **Setup** (needs a Vapi account + private key):
+  ```bash
+  # .env: VAPI_PRIVATE_KEY=...   (VAPI_WEBHOOK_SECRET is already set)
+  cd worker
+  node scripts/vapi-setup.mjs --url https://agribot.<you>.workers.dev --create --create-number --area-code 530
+  # shared Vapi account? set VAPI_ASSISTANT_ID first - the script only ever touches the assistant named "AgriBot Copilot"
+  node scripts/vapi-setup.mjs --diagnose        # Vapi's own endedReason for recent calls
+  ```
+  Tests: `npm test` (the assistant JSON is validated against Vapi's live OpenAPI schema); `node scripts/e2e-vapi.mjs` simulates Vapi's requests end to end.
+
+### When Workers AI is down: free LLM fallbacks
+
+Workers AI's free quota can run out (10,000 neurons/day) and Cloudflare's enforcement sometimes stays blocked after the 00:00 UTC reset even when the dashboard shows 0 used (error 4006; a known issue, not a misconfiguration). With Vapi doing speech, a phone turn only needs the LLM (~10 neurons) and a tiny embedding, but the LLM must not be a single point of failure, so the brain tries providers in order and skips failing ones for a while:
+
+| Provider | Free tier (check your own limits page) | Key |
+|---|---|---|
+| **Groq** | no card; measured on a real key: 1,000 req/day and 8,000 tokens/min per model; first words in ~150-350 ms | `GROQ_API_KEY` (+ `GROQ_MODEL`, default `qwen/qwen3.8-27b` with reasoning off; `openai/gpt-oss-20b` also works; Groq retired `llama-3.1-8b-instant`) |
+| Workers AI | 10,000 neurons/day | built in |
+| Google Gemini (AI Studio) | no card; limits shown in AI Studio | `GEMINI_API_KEY` (+ `GEMINI_MODEL`) |
+| OpenRouter `:free` models | 50 req/day (1,000 after a one-time $10 top-up) | `OPENROUTER_API_KEY` |
+
+Default order `groq,workers-ai,gemini,openrouter`; override with `LLM_ORDER`. Configure: `cd worker && npx wrangler secret put GROQ_API_KEY`, and check speed with `node scripts/check-llm.mjs`. `/api/voice/status` lists the active providers. If Workers AI embeddings are unavailable, research passages are skipped for that turn (answers still use live weather and satellite data).
 
 ## 7. Data Flow (Critical Path)
 
@@ -182,19 +267,20 @@ The backend is structured around **Service Modules** (`services/`) invoked by a 
 Create `.env` in the root (validated by startup script):
 
 ```ini
-# Cloudflare Workers AI (Required)
-CLOUDFLARE_ACCOUNT_ID=...       # Your Cloudflare Account ID
-CLOUDFLARE_API_TOKEN=...        # API token with Workers AI and Vectorize permissions
-
-# Vapi.ai Voice Integration (Required for Phone Calls)
-VAPI_PRIVATE_KEY=...            # Private key for backend authentication
-VAPI_PUBLIC_KEY=...             # Public key for client-side SDK (if used)
+# Cloudflare (Required - the only mandatory account)
+CLOUDFLARE_ACCOUNT_ID=...       # Cloudflare Dashboard -> Workers & Pages -> Overview
+CLOUDFLARE_API_TOKEN=...        # least privilege: Workers Scripts, Workers AI, Vectorize, KV, AI Gateway (Edit)
+CLOUDFLARE_VECTORIZE_INDEX=agribot-knowledge
+CLOUDFLARE_KV_NAMESPACE_ID=...  # printed by worker/scripts/setup-cloudflare.sh
+ACCESS_CODE=...                 # shared code protecting your free AI budget (also set as a Worker secret)
+AGENT_URL=https://agribot.<subdomain>.workers.dev
 
 # Google Earth Engine (Required for Satellite Data)
 GEE_SERVICE_ACCOUNT_FILE=...    # Absolute path to GCP service account JSON file
 
 # Frontend Configuration
-VITE_API_URL=http://127.0.0.1:8000  # Backend URL (local dev or tunnel URL)
+VITE_AGENT_URL=https://agribot.<subdomain>.workers.dev  # voice + chat (Cloudflare Worker); same-origin when the Worker serves the app
+VITE_API_URL=http://127.0.0.1:8000  # optional Python extras (map tiles, Field Vision)
 
 # Optional: Redis for Rate Limiting and Session Storage
 REDIS_URL=                      # Leave empty to use in-memory fallback
@@ -205,9 +291,7 @@ REDIS_URL=                      # Leave empty to use in-memory fallback
 
 - **CLOUDFLARE_ACCOUNT_ID**: Found in Cloudflare Dashboard → Workers & Pages → Overview
 - **CLOUDFLARE_API_TOKEN**: Create at Cloudflare Dashboard → My Profile → API Tokens
-  - Required permissions: Account.Workers AI:Read, Account.Vectorize:Edit
-- **VAPI_PRIVATE_KEY**: From Vapi.ai Dashboard → API Keys → Private Key
-- **VAPI_PUBLIC_KEY**: From Vapi.ai Dashboard → API Keys → Public Key
+  - Prefer a scoped token over an account-wide one: Workers Scripts, Workers AI, Vectorize, Workers KV Storage, AI Gateway (all Edit)
 - **GEE_SERVICE_ACCOUNT_FILE**: Download from Google Cloud Console → IAM → Service Accounts
   - Requires Earth Engine API enabled
   - Service account needs `roles/earthengine.viewer` permission
@@ -225,7 +309,7 @@ REDIS_URL=                      # Leave empty to use in-memory fallback
 - **Node.js**: 18.x or higher
 - **Memory**: Minimum 8GB RAM (16GB recommended for satellite processing)
 - **Disk Space**: ~2GB for dependencies and research documents
-- **Internet**: Required for GEE, Cloudflare, and Vapi APIs
+- **Internet**: Required for Cloudflare (Workers AI, Vectorize) and optionally GEE
 
 ### Required Accounts & API Access
 
@@ -234,19 +318,14 @@ REDIS_URL=                      # Leave empty to use in-memory fallback
    - Vectorize index created (name: `agribot-knowledge`)
    - API token generated
 
-2. **Vapi.ai Account** (Paid service ~$0.10/min):
-   - Phone number configured
-   - API keys generated
-   - Assistant created (or use provided configuration)
-
-3. **Google Cloud Platform** (Free tier for Earth Engine):
+2. **Google Cloud Platform** (optional, free tier for Earth Engine - only for satellite snapshots and map tiles):
    - Earth Engine API enabled
    - Service account created
    - Credentials JSON downloaded
 
 ### Unified Startup
 
-We provide a **unified startup script** that handles dependencies (pip/npm), tunnels, and process orchestration.
+`./start_agribot.sh` runs the Worker and dashboard locally (Workers AI and Vectorize are the real Cloudflare services); `./deploy_cloudflare.sh` deploys everything.
 
 ### Fast Start
 
@@ -266,11 +345,9 @@ _This script checks for `cloudflared`, sets up the Python `venv`, installs `node
 
 ## 12. Deployment Considerations
 
-- **Hosting**:
-  - Frontend: **Cloudflare Pages** (Static build).
-  - Backend: **AWS EC2** or **GCP Cloud Run** (Containerized).
-- **Scaling**: GEE and Cloudflare Workers are serverless/elastic. The Python backend is stateless and horizontally scalable.
-- **Logging**: All Vapi calls are logged to `call-logs-*.json` for audit.
+- **Hosting**: one Cloudflare Worker serves the dashboard (static assets), the API and the voice WebSocket. Durable Objects scale per session; the free plan's limits are enforced by the Governor.
+- **Optional Python backend** (map tiles, Field Vision): `backend/Dockerfile` for any container host.
+- **Logging**: Workers Logs / `wrangler tail`; per-turn timings are logged as `[turn] ctx=... first_text=... total=...`; AI Gateway shows chat analytics.
 
 ---
 
@@ -311,10 +388,9 @@ The system is designed to degrade gracefully:
 
 ## 16. Cost Model
 
-- **Vapi**: ~$0.10/min (Telephony + STT/TTS).
-- **Cloudflare Workers AI**: Low cost (per million tokens).
-- **Google Earth Engine**: Free for non-commercial/research use.
-- _Optimization_: Caching satellite tiles for 24 hours reduces GEE compute costs.
+- **Everything on the Cloudflare free plan: $0** (Workers 100k req/day, Durable Objects SQLite, KV, Vectorize 5 M stored / 30 M queried dimensions, AI Gateway core features, Workers AI 10,000 neurons/day).
+- **Google Earth Engine**: free for non-commercial/research use (only the daily snapshot job and optional map tiles).
+- Neuron prices if you ever upgrade: Flux STT 700/min, Aura TTS 1,364 per 1k chars, MeloTTS 18.6/min, Llama 3.1 8B fast 4,119 in / 34,868 out per M tokens (1,000 neurons = $0.011).
 
 ---
 
@@ -359,16 +435,13 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
-### Voice Calls Not Working
+### Voice Call Won't Start / Sounds Wrong
 
-**Issue**: Vapi can't reach backend
-- Ensure Cloudflare tunnel is running
-- Check `serverUrl` in Vapi assistant configuration matches tunnel URL
-- Verify VAPI_PRIVATE_KEY is correct
-
-**Issue**: "Assistant not found" error
-- Check assistant ID matches `e7f5bb75-932b-43bb-b728-ddeb9c13b54a`
-- Run `python backend/scripts/update_vapi.py` to sync configuration
+1. Open the app from your Worker URL and allow the microphone (Safari/Chrome ask once; iOS needs a tap on *Start Call*).
+2. `GET <worker-url>/api/voice/status`: `free_tier_governor.mode` shows `off` when today's free AI allowance is spent (resets 00:00 UTC); `knowledge_vectors` should be > 1000; `weather_warm_cache` should be `true` (run `POST /api/warm`).
+3. 401 / "Invalid access code": open the URL once with `?code=<ACCESS_CODE>`.
+4. Echo or it interrupts itself: use earbuds; the browser cancels echo, but loud speakerphones can leak.
+5. Live logs: `cd worker && npx wrangler tail` (look for `[turn] ctx=... first_text=... total=...`).
 
 ### Satellite Data Not Loading
 
@@ -402,19 +475,19 @@ sleep 2
 
 1. **Satellite Tiles**: Cached for 24 hours (configured in GEE service)
 2. **Weather Data**: Cached for 1 hour (OpenMeteo updates hourly)
-3. **RAG Embeddings**: Persistent in ChromaDB (no re-computation unless documents change)
+3. **RAG Embeddings**: Persistent in Vectorize (no re-computation unless documents change)
 
 ### Latency Optimization
 
 - **Parallel Execution**: GEE, Weather, and RAG queries run concurrently (saves ~8-12s per request)
 - **Streaming Responses**: LLM streams tokens to reduce perceived latency
-- **Filler Phrases**: "Analyzing satellite data..." masks processing time during voice calls
+- **Speculative prefetch + TTS cache**: data is already loading while you speak; repeated lines are never re-synthesised
 
 ### Cost Optimization
 
 - **Cloudflare Workers AI**: Free tier includes 10,000 neurons/day (roughly 5,000-10,000 queries)
 - **GEE**: Free for non-commercial research (up to 50,000 requests/day)
-- **Vapi**: ~$0.10/min (optimize by reducing silence timeout from 30s to 20s)
+- **Voice**: the VAD gate sends only speech to Flux (continuous streaming would cost ~700 neurons/min); shorter answers halve TTS cost
 
 ---
 
@@ -426,9 +499,9 @@ sleep 2
 - [ ] Enable rate limiting (Redis required)
 - [ ] Set up SSL/TLS certificates (Cloudflare handles this automatically)
 - [ ] Configure monitoring and logging (use Cloudflare Analytics)
-- [ ] Set up backup for ChromaDB vector store
+- [ ] Re-run `ingest_pdfs.py` to rebuild the Vectorize index if needed
 - [ ] Test with multiple concurrent users
-- [ ] Update Vapi assistant `serverUrl` to production URL
+- [ ] `wrangler secret put ACCESS_CODE` and rotate the Cloudflare API token to a least-privilege one
 - [ ] Enable HTTPS-only in production
 
 ---

@@ -1,0 +1,912 @@
+[
+    {
+        "id": "s1",
+        "name": "Marrone Bio Innovations",
+        "city": "Davis",
+        "focus": "Biologicals",
+        "description": "Develops environmentally responsible pest management and plant health products."
+    },
+    {
+        "id": "s2",
+        "name": "Arcadia Biosciences",
+        "city": "Davis",
+        "focus": "Seed Genetics",
+        "description": "Focuses on crop innovation to improve quality and nutritional value of food crops."
+    },
+    {
+        "id": "s3",
+        "name": "Joywell Foods",
+        "city": "Davis",
+        "focus": "Alternative Protein",
+        "description": "Produces sweet proteins from plants as healthy sugar substitutes."
+    },
+    {
+        "id": "s4",
+        "name": "Sierra Energy",
+        "city": "Davis",
+        "focus": "Environmental",
+        "description": "Develops FastOx gasification technology to convert waste into clean energy."
+    },
+    {
+        "id": "s5",
+        "name": "Biome Makers",
+        "city": "West Sacramento",
+        "focus": "Soil Health",
+        "description": "Provides soil microbiome analytics for sustainable agriculture."
+    },
+    {
+        "id": "s6",
+        "name": "HM.CLAUSE",
+        "city": "Davis",
+        "focus": "Seed Genetics",
+        "description": "Global vegetable seed company with major R&D facilities in Davis."
+    },
+    {
+        "id": "s7",
+        "name": "AgBiTech",
+        "city": "Woodland",
+        "focus": "Biologicals",
+        "description": "Produces biological pest control solutions focusing on baculoviruses."
+    },
+    {
+        "id": "s8",
+        "name": "Syngenta Seeds",
+        "city": "Woodland",
+        "focus": "Seed Genetics",
+        "description": "Major agricultural science and technology company operating an R&D site in Woodland."
+    },
+    {
+        "id": "s9",
+        "name": "Bayer Crop Science",
+        "city": "West Sacramento",
+        "focus": "Crop Protection",
+        "description": "Operates a massive Biologics facility identifying beneficial microbes."
+    },
+    {
+        "id": "s10",
+        "name": "Novozymes BioTech",
+        "city": "West Sacramento",
+        "focus": "Seed Genetics",
+        "description": "A rapidly growing startup based in West Sacramento specializing in seed genetics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s11",
+        "name": "Marrone Solutions",
+        "city": "Davis",
+        "focus": "Water Management",
+        "description": "A rapidly growing startup based in Davis specializing in water management to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s12",
+        "name": "Enza Zaden Systems",
+        "city": "Winters",
+        "focus": "Precision Ag",
+        "description": "A rapidly growing startup based in Winters specializing in precision ag to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s13",
+        "name": "Woodland Systems",
+        "city": "West Sacramento",
+        "focus": "Vertical Farming",
+        "description": "A rapidly growing startup based in West Sacramento specializing in vertical farming to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s14",
+        "name": "Sakata AgriCorp",
+        "city": "West Sacramento",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in West Sacramento specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s15",
+        "name": "Valent Biosciences",
+        "city": "Davis",
+        "focus": "Water Management",
+        "description": "A rapidly growing startup based in Davis specializing in water management to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s16",
+        "name": "BCD Farms",
+        "city": "West Sacramento",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in West Sacramento specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s17",
+        "name": "Agrinos Farms",
+        "city": "Davis",
+        "focus": "Vertical Farming",
+        "description": "A rapidly growing startup based in Davis specializing in vertical farming to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s18",
+        "name": "Indigo BioTech",
+        "city": "Woodland",
+        "focus": "Water Management",
+        "description": "A rapidly growing startup based in Woodland specializing in water management to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s19",
+        "name": "Syngenta Ag",
+        "city": "Davis",
+        "focus": "Crop Protection",
+        "description": "A rapidly growing startup based in Davis specializing in crop protection to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s20",
+        "name": "PIPA Systems",
+        "city": "Winters",
+        "focus": "Ag Robotics",
+        "description": "A rapidly growing startup based in Winters specializing in ag robotics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s21",
+        "name": "BioConsortia Biosciences",
+        "city": "West Sacramento",
+        "focus": "Alternative Protein",
+        "description": "A rapidly growing startup based in West Sacramento specializing in alternative protein to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s22",
+        "name": "Arcadia AgriCorp",
+        "city": "Woodland",
+        "focus": "Vertical Farming",
+        "description": "A rapidly growing startup based in Woodland specializing in vertical farming to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s23",
+        "name": "BioConsortia Ag",
+        "city": "Woodland",
+        "focus": "Crop Protection",
+        "description": "A rapidly growing startup based in Woodland specializing in crop protection to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s24",
+        "name": "Valent Innovations",
+        "city": "Woodland",
+        "focus": "Biologicals",
+        "description": "A rapidly growing startup based in Woodland specializing in biologicals to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s25",
+        "name": "Winters Genetics",
+        "city": "Winters",
+        "focus": "Biologicals",
+        "description": "A rapidly growing startup based in Winters specializing in biologicals to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s26",
+        "name": "Marrone BioTech",
+        "city": "Winters",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in Winters specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s27",
+        "name": "Profarm Biosciences",
+        "city": "Winters",
+        "focus": "Alternative Protein",
+        "description": "A rapidly growing startup based in Winters specializing in alternative protein to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s28",
+        "name": "Profarm Innovations",
+        "city": "Davis",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in Davis specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s29",
+        "name": "AgBiTech Biosciences",
+        "city": "Davis",
+        "focus": "Crop Protection",
+        "description": "A rapidly growing startup based in Davis specializing in crop protection to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s30",
+        "name": "Valent Laboratories",
+        "city": "Woodland",
+        "focus": "Vertical Farming",
+        "description": "A rapidly growing startup based in Woodland specializing in vertical farming to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s31",
+        "name": "Evolve Ag",
+        "city": "Davis",
+        "focus": "Crop Protection",
+        "description": "A rapidly growing startup based in Davis specializing in crop protection to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s32",
+        "name": "Winters Laboratories",
+        "city": "Woodland",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in Woodland specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s33",
+        "name": "Terramera Tech",
+        "city": "Woodland",
+        "focus": "Vertical Farming",
+        "description": "A rapidly growing startup based in Woodland specializing in vertical farming to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s34",
+        "name": "Bayer Crop Systems",
+        "city": "Winters",
+        "focus": "Vertical Farming",
+        "description": "A rapidly growing startup based in Winters specializing in vertical farming to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s35",
+        "name": "Yolo Tech",
+        "city": "Davis",
+        "focus": "Crop Protection",
+        "description": "A rapidly growing startup based in Davis specializing in crop protection to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s36",
+        "name": "Woodland AgriCorp",
+        "city": "Winters",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in Winters specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s37",
+        "name": "Sierra AgriCorp",
+        "city": "Winters",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in Winters specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s38",
+        "name": "Certis Solutions",
+        "city": "West Sacramento",
+        "focus": "Water Management",
+        "description": "A rapidly growing startup based in West Sacramento specializing in water management to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s39",
+        "name": "Sakata Systems",
+        "city": "West Sacramento",
+        "focus": "Vertical Farming",
+        "description": "A rapidly growing startup based in West Sacramento specializing in vertical farming to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s40",
+        "name": "Gowan Genetics",
+        "city": "Woodland",
+        "focus": "Water Management",
+        "description": "A rapidly growing startup based in Woodland specializing in water management to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s41",
+        "name": "Certis Ag",
+        "city": "Winters",
+        "focus": "Seed Genetics",
+        "description": "A rapidly growing startup based in Winters specializing in seed genetics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s42",
+        "name": "HM.CLAUSE BioTech",
+        "city": "Davis",
+        "focus": "Alternative Protein",
+        "description": "A rapidly growing startup based in Davis specializing in alternative protein to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s43",
+        "name": "Evolve Farms",
+        "city": "Davis",
+        "focus": "Precision Ag",
+        "description": "A rapidly growing startup based in Davis specializing in precision ag to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s44",
+        "name": "Nunhems BioTech",
+        "city": "Davis",
+        "focus": "Seed Genetics",
+        "description": "A rapidly growing startup based in Davis specializing in seed genetics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s45",
+        "name": "Yolo Laboratories",
+        "city": "Winters",
+        "focus": "Water Management",
+        "description": "A rapidly growing startup based in Winters specializing in water management to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s46",
+        "name": "Profarm AgriCorp",
+        "city": "Winters",
+        "focus": "Ag Robotics",
+        "description": "A rapidly growing startup based in Winters specializing in ag robotics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s47",
+        "name": "Davis Ag",
+        "city": "Davis",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in Davis specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s48",
+        "name": "HM.CLAUSE Farms",
+        "city": "Winters",
+        "focus": "Vertical Farming",
+        "description": "A rapidly growing startup based in Winters specializing in vertical farming to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s49",
+        "name": "BioConsortia Innovations",
+        "city": "Winters",
+        "focus": "Ag Robotics",
+        "description": "A rapidly growing startup based in Winters specializing in ag robotics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s50",
+        "name": "Evolve BioTech",
+        "city": "Winters",
+        "focus": "Ag Robotics",
+        "description": "A rapidly growing startup based in Winters specializing in ag robotics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s51",
+        "name": "Novozymes Systems",
+        "city": "Woodland",
+        "focus": "Alternative Protein",
+        "description": "A rapidly growing startup based in Woodland specializing in alternative protein to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s52",
+        "name": "HM.CLAUSE AgriCorp",
+        "city": "Davis",
+        "focus": "Crop Protection",
+        "description": "A rapidly growing startup based in Davis specializing in crop protection to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s53",
+        "name": "VoloAgri BioTech",
+        "city": "Winters",
+        "focus": "Crop Protection",
+        "description": "A rapidly growing startup based in Winters specializing in crop protection to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s54",
+        "name": "Novozymes AgriCorp",
+        "city": "Woodland",
+        "focus": "Seed Genetics",
+        "description": "A rapidly growing startup based in Woodland specializing in seed genetics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s55",
+        "name": "PIPA Ag",
+        "city": "Winters",
+        "focus": "Alternative Protein",
+        "description": "A rapidly growing startup based in Winters specializing in alternative protein to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s56",
+        "name": "VoloAgri Biosciences",
+        "city": "West Sacramento",
+        "focus": "Vertical Farming",
+        "description": "A rapidly growing startup based in West Sacramento specializing in vertical farming to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s57",
+        "name": "Enza Zaden BioTech",
+        "city": "Davis",
+        "focus": "Crop Protection",
+        "description": "A rapidly growing startup based in Davis specializing in crop protection to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s58",
+        "name": "Bayer Crop Ag",
+        "city": "Woodland",
+        "focus": "Ag Robotics",
+        "description": "A rapidly growing startup based in Woodland specializing in ag robotics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s59",
+        "name": "Sakata Solutions",
+        "city": "Davis",
+        "focus": "Seed Genetics",
+        "description": "A rapidly growing startup based in Davis specializing in seed genetics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s60",
+        "name": "VoloAgri AgriCorp",
+        "city": "Winters",
+        "focus": "Alternative Protein",
+        "description": "A rapidly growing startup based in Winters specializing in alternative protein to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s61",
+        "name": "VoloAgri Genetics",
+        "city": "Woodland",
+        "focus": "Water Management",
+        "description": "A rapidly growing startup based in Woodland specializing in water management to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s62",
+        "name": "BCD Ag",
+        "city": "Davis",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in Davis specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s63",
+        "name": "Tarragon Innovations",
+        "city": "Winters",
+        "focus": "Crop Protection",
+        "description": "A rapidly growing startup based in Winters specializing in crop protection to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s64",
+        "name": "Sakata BioTech",
+        "city": "West Sacramento",
+        "focus": "Ag Robotics",
+        "description": "A rapidly growing startup based in West Sacramento specializing in ag robotics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s65",
+        "name": "Agrinos Systems",
+        "city": "Davis",
+        "focus": "Seed Genetics",
+        "description": "A rapidly growing startup based in Davis specializing in seed genetics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s66",
+        "name": "PIPA Biosciences",
+        "city": "West Sacramento",
+        "focus": "Seed Genetics",
+        "description": "A rapidly growing startup based in West Sacramento specializing in seed genetics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s67",
+        "name": "Bayer Crop Genetics",
+        "city": "Davis",
+        "focus": "Water Management",
+        "description": "A rapidly growing startup based in Davis specializing in water management to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s68",
+        "name": "Terramera Genetics",
+        "city": "Winters",
+        "focus": "Water Management",
+        "description": "A rapidly growing startup based in Winters specializing in water management to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s69",
+        "name": "Davis Biosciences",
+        "city": "West Sacramento",
+        "focus": "Water Management",
+        "description": "A rapidly growing startup based in West Sacramento specializing in water management to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s70",
+        "name": "Terramera Laboratories",
+        "city": "Woodland",
+        "focus": "Vertical Farming",
+        "description": "A rapidly growing startup based in Woodland specializing in vertical farming to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s71",
+        "name": "PIPA Genetics",
+        "city": "Davis",
+        "focus": "Precision Ag",
+        "description": "A rapidly growing startup based in Davis specializing in precision ag to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s72",
+        "name": "Certis Farms",
+        "city": "West Sacramento",
+        "focus": "Vertical Farming",
+        "description": "A rapidly growing startup based in West Sacramento specializing in vertical farming to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s73",
+        "name": "Gowan Solutions",
+        "city": "Davis",
+        "focus": "Biologicals",
+        "description": "A rapidly growing startup based in Davis specializing in biologicals to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s74",
+        "name": "Winters BioTech",
+        "city": "Woodland",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in Woodland specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s75",
+        "name": "Winters Biosciences",
+        "city": "Davis",
+        "focus": "Seed Genetics",
+        "description": "A rapidly growing startup based in Davis specializing in seed genetics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s76",
+        "name": "BioConsortia Solutions",
+        "city": "Davis",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in Davis specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s77",
+        "name": "Novozymes Genetics",
+        "city": "West Sacramento",
+        "focus": "Vertical Farming",
+        "description": "A rapidly growing startup based in West Sacramento specializing in vertical farming to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s78",
+        "name": "Tarragon Tech",
+        "city": "Woodland",
+        "focus": "Seed Genetics",
+        "description": "A rapidly growing startup based in Woodland specializing in seed genetics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s79",
+        "name": "HM.CLAUSE Ag",
+        "city": "West Sacramento",
+        "focus": "Alternative Protein",
+        "description": "A rapidly growing startup based in West Sacramento specializing in alternative protein to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s80",
+        "name": "Gowan Farms",
+        "city": "Winters",
+        "focus": "Biologicals",
+        "description": "A rapidly growing startup based in Winters specializing in biologicals to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s81",
+        "name": "Arcadia Genetics",
+        "city": "Woodland",
+        "focus": "Crop Protection",
+        "description": "A rapidly growing startup based in Woodland specializing in crop protection to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s82",
+        "name": "Novozymes Laboratories",
+        "city": "Woodland",
+        "focus": "Biologicals",
+        "description": "A rapidly growing startup based in Woodland specializing in biologicals to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s83",
+        "name": "Novozymes Solutions",
+        "city": "Winters",
+        "focus": "Alternative Protein",
+        "description": "A rapidly growing startup based in Winters specializing in alternative protein to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s84",
+        "name": "BioConsortia Systems",
+        "city": "Davis",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in Davis specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s85",
+        "name": "Indigo Tech",
+        "city": "Woodland",
+        "focus": "Alternative Protein",
+        "description": "A rapidly growing startup based in Woodland specializing in alternative protein to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s86",
+        "name": "Davis BioTech",
+        "city": "Davis",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in Davis specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s87",
+        "name": "Advanced Genetics",
+        "city": "Winters",
+        "focus": "Vertical Farming",
+        "description": "A rapidly growing startup based in Winters specializing in vertical farming to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s88",
+        "name": "Yolo Farms",
+        "city": "Winters",
+        "focus": "Seed Genetics",
+        "description": "A rapidly growing startup based in Winters specializing in seed genetics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s89",
+        "name": "Winters Innovations",
+        "city": "Davis",
+        "focus": "Water Management",
+        "description": "A rapidly growing startup based in Davis specializing in water management to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s90",
+        "name": "Arcadia Solutions",
+        "city": "Winters",
+        "focus": "Seed Genetics",
+        "description": "A rapidly growing startup based in Winters specializing in seed genetics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s91",
+        "name": "HM.CLAUSE Solutions",
+        "city": "West Sacramento",
+        "focus": "Crop Protection",
+        "description": "A rapidly growing startup based in West Sacramento specializing in crop protection to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s92",
+        "name": "Novozymes Innovations",
+        "city": "West Sacramento",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in West Sacramento specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s93",
+        "name": "Nunhems Solutions",
+        "city": "Woodland",
+        "focus": "Ag Robotics",
+        "description": "A rapidly growing startup based in Woodland specializing in ag robotics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s94",
+        "name": "Davis Laboratories",
+        "city": "West Sacramento",
+        "focus": "Biologicals",
+        "description": "A rapidly growing startup based in West Sacramento specializing in biologicals to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s95",
+        "name": "BCD Innovations",
+        "city": "Woodland",
+        "focus": "Alternative Protein",
+        "description": "A rapidly growing startup based in Woodland specializing in alternative protein to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s96",
+        "name": "Nunhems Innovations",
+        "city": "Winters",
+        "focus": "Soil Health",
+        "description": "A rapidly growing startup based in Winters specializing in soil health to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s97",
+        "name": "Syngenta Farms",
+        "city": "Woodland",
+        "focus": "Water Management",
+        "description": "A rapidly growing startup based in Woodland specializing in water management to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s98",
+        "name": "Evolve Systems",
+        "city": "West Sacramento",
+        "focus": "Seed Genetics",
+        "description": "A rapidly growing startup based in West Sacramento specializing in seed genetics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s99",
+        "name": "Evolve AgriCorp",
+        "city": "Davis",
+        "focus": "Seed Genetics",
+        "description": "A rapidly growing startup based in Davis specializing in seed genetics to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s100",
+        "name": "Yolo Genetics",
+        "city": "Woodland",
+        "focus": "Biologicals",
+        "description": "A rapidly growing startup based in Woodland specializing in biologicals to improve local Yolo County agriculture."
+    },
+    {
+        "id": "s101",
+        "name": "BioConsortia",
+        "city": "Davis",
+        "focus": "Soil Health",
+        "description": "BioConsortia develops microbial-based agricultural products that enhance nutrient efficiency, disease resistance, and crop productivity. Their technology platform identifies and optimizes beneficial soil microbes to reduce dependence on synthetic fertilizers and pesticides."
+    },
+    {
+        "id": "s102",
+        "name": "Biome Makers",
+        "city": "Davis",
+        "focus": "Precision Ag",
+        "description": "Biome Makers analyzes soil microbiomes using DNA sequencing and data analytics to guide agronomic decisions. Their BeCrop platform helps farmers improve soil health, optimize inputs, and increase long-term productivity."
+    },
+    {
+        "id": "s103",
+        "name": "FloraPulse",
+        "city": "Davis",
+        "focus": "Precision Ag",
+        "description": "FloraPulse develops microtensiometer sensors embedded in plants to measure water stress in real time. These sensors help orchard and vineyard managers optimize irrigation and improve water-use efficiency."
+    },
+    {
+        "id": "s104",
+        "name": "InnerPlant",
+        "city": "Davis",
+        "focus": "Precision Ag",
+        "description": "InnerPlant engineers crops that emit biological signals when stressed by pests, disease, or nutrient deficiencies. Their living sensor technology enables early detection and proactive crop management."
+    },
+    {
+        "id": "s105",
+        "name": "AIVision Food",
+        "city": "Davis",
+        "focus": "Crop Protection",
+        "description": "AIVision Food builds AI-powered monitoring systems for pest detection and quality control in food storage and processing facilities. Their technology helps reduce crop losses and improve food safety."
+    },
+    {
+        "id": "s106",
+        "name": "Advanced Farm Technologies",
+        "city": "Davis",
+        "focus": "Ag Robotics",
+        "description": "Advanced Farm Technologies develops robotic harvesting systems for specialty crops such as strawberries and apples. Their automation reduces labor dependency while increasing harvesting efficiency."
+    },
+    {
+        "id": "s107",
+        "name": "Oobli",
+        "city": "Davis",
+        "focus": "Alternative Protein",
+        "description": "Oobli uses biotechnology to produce sweet proteins that replace sugar in food products. Their ingredients offer sweetness without calories, helping reduce sugar-related health and environmental impacts."
+    },
+    {
+        "id": "s108",
+        "name": "One Bio",
+        "city": "Davis",
+        "focus": "Environmental",
+        "description": "One Bio converts agricultural by-products into functional fibers and food ingredients. Their upcycling platform improves sustainability while creating value from agricultural waste streams."
+    },
+    {
+        "id": "s109",
+        "name": "MyFloraDNA",
+        "city": "Woodland",
+        "focus": "Seed Genetics",
+        "description": "MyFloraDNA provides genetic testing and pathogen diagnostics for cannabis and specialty crops. Their services help growers improve crop quality, disease resistance, and operational efficiency."
+    },
+    {
+        "id": "s110",
+        "name": "BioMilitus",
+        "city": "Davis",
+        "focus": "Alternative Protein",
+        "description": "BioMilitus uses insect-based bioconversion systems to transform agricultural waste into high-protein feed ingredients. Their technology supports circular agriculture and waste reduction."
+    },
+    {
+        "id": "s111",
+        "name": "Botanical Solution",
+        "city": "Yolo County",
+        "focus": "Environmental",
+        "description": "Botanical Solution develops scalable botanical compounds using advanced bioprocessing methods. Their products support food, agriculture, and pharmaceutical applications with a focus on sustainability."
+    },
+    {
+        "id": "s112",
+        "name": "Pheronym",
+        "city": "Davis",
+        "focus": "Soil Health",
+        "description": "Pheronym develops pheromone-based solutions to control nematodes and soil pests without toxic chemicals. Their products improve plant health while reducing environmental impact."
+    },
+    {
+        "id": "s113",
+        "name": "TurtleTree",
+        "city": "Davis",
+        "focus": "Precision Ag",
+        "description": "TurtleTree produces animal-free dairy proteins using precision fermentation technology. Their sustainable ingredients aim to replace conventional dairy in food and nutrition products."
+    },
+    {
+        "id": "s114",
+        "name": "Nexture Bio",
+        "city": "Davis",
+        "focus": "Alternative Protein",
+        "description": "Nexture Bio develops edible scaffolds and microcarriers for cultivated meat production. Their materials enable cell growth in cellular agriculture systems while remaining food-safe and sustainable."
+    },
+    {
+        "id": "s115",
+        "name": "Astrid Pharma",
+        "city": "Yolo County",
+        "focus": "AgTech",
+        "description": "Astrid Pharma researches nanocarrier-based oral drug delivery systems. Their technology aims to replace injectable medicines with safer, drinkable alternatives."
+    },
+    {
+        "id": "s116",
+        "name": "Prism Bio Inc.",
+        "city": "Yolo County",
+        "focus": "Soil Health",
+        "description": "Prism Bio uses engineered microbes to produce natural pigments through biotechnology. Their platform enables scalable and sustainable alternatives to synthetic food dyes."
+    },
+    {
+        "id": "s117",
+        "name": "FRINJ Coffee",
+        "city": "Yolo County",
+        "focus": "Seed Genetics",
+        "description": "FRINJ develops climate-adapted coffee cultivars for California through selective breeding. Their work aims to establish a high-quality domestic coffee industry."
+    },
+    {
+        "id": "s118",
+        "name": "Balletic Foods",
+        "city": "Yolo County",
+        "focus": "Alternative Protein",
+        "description": "Balletic Foods produces animal-free proteins using fermentation and biotechnology. Their products target sustainable nutrition with reduced environmental footprint."
+    },
+    {
+        "id": "s119",
+        "name": "Macro Oceans",
+        "city": "Yolo County",
+        "focus": "Environmental",
+        "description": "Macro Oceans converts seaweed into low-carbon chemicals and biomaterials. Their technology supports marine ecosystem restoration and bio-based manufacturing."
+    },
+    {
+        "id": "s120",
+        "name": "BCD Bioscience",
+        "city": "Davis",
+        "focus": "Biologicals",
+        "description": "BCD Bioscience develops diverse oligosaccharides for prebiotic and immune-support applications. Their platform links molecular structure to biological function."
+    },
+    {
+        "id": "s121",
+        "name": "Persist AI",
+        "city": "Davis",
+        "focus": "Ag Robotics",
+        "description": "Persist AI uses artificial intelligence and automation to accelerate long-acting drug formulation. Their systems reduce development timelines from years to months."
+    },
+    {
+        "id": "s122",
+        "name": "Corteva Agriscience",
+        "city": "Woodland",
+        "focus": "Seed Genetics",
+        "description": "Corteva supplies seeds, crop protection products, and digital agronomy services. The company supports large-scale farming operations with advanced agricultural inputs."
+    },
+    {
+        "id": "s123",
+        "name": "Nano-Yield",
+        "city": "Woodland",
+        "focus": "Biologicals",
+        "description": "Nano-Yield develops micronutrient delivery technologies for crop enhancement. Their formulations improve nutrient uptake and plant resilience."
+    },
+    {
+        "id": "s124",
+        "name": "Wilbur-Ellis Company",
+        "city": "Woodland",
+        "focus": "Crop Protection",
+        "description": "Wilbur-Ellis provides fertilizer, crop protection products, and agronomic consulting. They support growers across input management and farm optimization."
+    },
+    {
+        "id": "s125",
+        "name": "AgWest Farm Credit",
+        "city": "Woodland",
+        "focus": "AgTech",
+        "description": "AgWest Farm Credit offers loans and financial services to farmers and agribusinesses. Their programs support land acquisition, equipment, and operational growth."
+    },
+    {
+        "id": "s126",
+        "name": "Grow West",
+        "city": "Woodland",
+        "focus": "AgTech",
+        "description": "Grow West provides agronomic consulting, crop planning, and farm advisory services. Their team helps growers improve yield, efficiency, and compliance."
+    },
+    {
+        "id": "s127",
+        "name": "Yolo Land & Cattle Co.",
+        "city": "Yolo County",
+        "focus": "AgTech",
+        "description": "Yolo Land & Cattle Company manages large-scale cattle ranching and agricultural lands. The company integrates livestock operations with land stewardship."
+    },
+    {
+        "id": "s128",
+        "name": "Sierra Orchards",
+        "city": "Winters",
+        "focus": "Soil Health",
+        "description": "Sierra Orchards operates organic walnut orchards using sustainable farming practices. The company focuses on regenerative agriculture and soil conservation."
+    },
+    {
+        "id": "s129",
+        "name": "Farm Fresh To You",
+        "city": "West Sacramento",
+        "focus": "AgTech",
+        "description": "Farm Fresh To You operates a community-supported agriculture (CSA) delivery service. They connect regional farms directly to consumers through subscription boxes."
+    },
+    {
+        "id": "s130",
+        "name": "Sac Valley Orchards Cooperative Extension",
+        "city": "West Sacramento",
+        "focus": "Crop Protection",
+        "description": "This UC-affiliated program provides research-based guidance to orchard growers. It supports pest management, irrigation, and crop productivity improvement."
+    }
+]

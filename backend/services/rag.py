@@ -60,7 +60,7 @@ class CloudflareRAGService:
     
     async def generate_embedding(self, text: str) -> List[float]:
         """Generate embedding using Cloudflare Workers AI."""
-        url = f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}/ai/run/{self.EMBEDDING_MODEL}"
+        url = f"{settings.cf_api_base}/accounts/{self.account_id}/ai/run/{self.EMBEDDING_MODEL}"
         
         payload = {"text": [text]}
         
@@ -77,7 +77,7 @@ class CloudflareRAGService:
         filter_metadata: Optional[Dict] = None
     ) -> List[Dict]:
         """Query Vectorize index for similar vectors."""
-        url = f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}/vectorize/v2/indexes/{self.index_name}/query"
+        url = f"{settings.cf_api_base}/accounts/{self.account_id}/vectorize/v2/indexes/{self.index_name}/query"
         
         payload = {
             "vector": query_embedding,
@@ -104,7 +104,8 @@ class CloudflareRAGService:
         self,
         query: str,
         crop: Optional[str] = None,
-        top_k: int = 5
+        top_k: int = 5,
+        rerank: bool = True
     ) -> List[SearchResult]:
         """
         Search the agricultural knowledge base.
@@ -113,6 +114,8 @@ class CloudflareRAGService:
             query: Natural language query
             crop: Optional crop filter
             top_k: Number of results
+            rerank: Run the Morph second-stage rerank (extra network hop; the
+                    voice path turns this off to save latency)
             
         Returns:
             List of relevant SearchResult objects
@@ -143,7 +146,7 @@ class CloudflareRAGService:
             # ---- Morph Rerank (additive second-stage) ----
             # Re-orders results by relevance using Morph's GPU reranker.
             # Falls back silently to original Vectorize order if unavailable.
-            if results and morph_service and morph_service.enabled:
+            if rerank and results and morph_service and morph_service.enabled:
                 try:
                     documents = [r.text for r in results if r.text]
                     if documents:

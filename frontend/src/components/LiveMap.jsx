@@ -19,13 +19,38 @@ function LocationMarker({ position, setPosition }) {
     const map = useMap()
 
     useEffect(() => {
-        if (position && Array.isArray(position) && position.length >= 2) {
-            const lat = Number(position[0]);
-            const lon = Number(position[1]);
-            if (!isNaN(lat) && !isNaN(lon)) {
-                map.flyTo([lat, lon], 16, { duration: 1.5 })
+        if (!(position && Array.isArray(position) && position.length >= 2)) return
+        const lat = Number(position[0])
+        const lon = Number(position[1])
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return
+
+        // Leaflet's animated flyTo divides by the container size: on a 0x0 container (hidden tab, collapsed
+        // panel, first paint before layout) that yields NaN and throws "Invalid LatLng". Only animate when
+        // the map has a real size; otherwise jump, and re-center as soon as it is laid out.
+        const recenter = () => {
+            try {
+                map.invalidateSize()
+                const size = map.getSize()
+                if (size.x > 0 && size.y > 0) map.flyTo([lat, lon], 16, { duration: 1.5 })
+                else map.setView([lat, lon], 16, { animate: false })
+            } catch {
+                try { map.setView([lat, lon], 16, { animate: false }) } catch { /* map not ready yet */ }
             }
         }
+        recenter()
+
+        const el = map.getContainer()
+        let ro
+        if (typeof ResizeObserver !== 'undefined' && el) {
+            let first = true
+            ro = new ResizeObserver(() => {
+                if (first) { first = false; return }          // the initial callback fires immediately
+                const s = map.getSize()
+                if (s.x > 0 && s.y > 0) { map.invalidateSize(); map.setView([lat, lon], map.getZoom() || 16, { animate: false }) }
+            })
+            ro.observe(el)
+        }
+        return () => ro?.disconnect()
     }, [position, map])
 
     if (!position || !Array.isArray(position) || position.length < 2) return null;
@@ -100,35 +125,24 @@ function CustomMapControls({ onLocate }) {
 }
 
 function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLayerChange, onNdviPointChange, onLocateMe, layerSummary }) {
-    // Basic NaN protection
+    // Basic NaN protection (every hook below runs on every render; the placeholder is returned after them)
     const safeLat = parseFloat(location?.lat);
     const safeLon = parseFloat(location?.lon);
+    const invalidLocation = isNaN(safeLat) || isNaN(safeLon);
 
     useEffect(() => {
-        if (isNaN(safeLat) || isNaN(safeLon)) {
+        if (invalidLocation) {
             const timer = setTimeout(() => {
                 if (onLocateMe) onLocateMe();
             }, 1000);
             return () => clearTimeout(timer);
         }
-    }, [safeLat, safeLon, onLocateMe]);
+    }, [invalidLocation, onLocateMe]);
 
-    if (isNaN(safeLat) || isNaN(safeLon)) {
-        return (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-black-forest/5 rounded-2xl border-2 border-dashed border-black-forest/10 p-4 text-center">
-                <Globe className="w-8 h-8 text-olive-leaf/40 mb-2 animate-pulse" />
-                <p className="text-sm font-semibold text-black-forest/60">Awaiting GPS telemetry...</p>
-                <p className="text-[10px] text-black-forest/40 mt-1 uppercase tracking-widest">Map calibrating</p>
-            </div>
-        );
-    }
-    
     const defaultLat = !isNaN(safeLat) ? safeLat : 38.5449;
     const defaultLon = !isNaN(safeLon) ? safeLon : -121.7405;
-    
-    const [position, setPosition] = useState([defaultLat, defaultLon]) 
 
-    // Sync incoming valid locations to state - removed duplicate useEffect
+    const [position, setPosition] = useState([defaultLat, defaultLon])
 
     // BOUNDARY CALCULATION: Create a rectangle around the center
     const fieldBounds = useMemo(() => {
@@ -142,7 +156,7 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
     }, [position])
 
     useEffect(() => {
-        // Fallback for location changes
+        // Follow valid location changes
         if (location) {
             const newLat = parseFloat(location?.lat);
             const newLon = parseFloat(location?.lon);
@@ -206,6 +220,16 @@ function LiveMap({ location, setLocation, satelliteData, activeLayer, onActiveLa
     }
 
     const currentStyle = getLayerStyle(activeLayer)
+
+    if (invalidLocation) {
+        return (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-black-forest/5 rounded-2xl border-2 border-dashed border-black-forest/10 p-4 text-center">
+                <Globe className="w-8 h-8 text-olive-leaf/40 mb-2 animate-pulse" />
+                <p className="text-sm font-semibold text-black-forest/60">Awaiting GPS telemetry...</p>
+                <p className="text-[10px] text-black-forest/40 mt-1 uppercase tracking-widest">Map calibrating</p>
+            </div>
+        );
+    }
 
     return (
         <div className="relative w-full h-full z-0">

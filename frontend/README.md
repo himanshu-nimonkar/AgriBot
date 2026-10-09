@@ -3,7 +3,7 @@
 **AgriBot** is a cutting-edge, voice-activated agricultural assistant that combines **Real-Time Satellite Data (Google Earth Engine)**, **Conversational AI (LLM)**, and **Hyper-Local Weather** to provide PhD-level agronomic advice to farmers.
 
 ![Status](https://img.shields.io/badge/System-Online-success)
-![Vapi](https://img.shields.io/badge/Voice_AI-Active-purple)
+![Voice](https://img.shields.io/badge/Voice_AI-Cloudflare-orange)
 ![GEE](https://img.shields.io/badge/Satellite_Data-Live-green)
 
 ---
@@ -12,7 +12,7 @@
 
 ### 1. Real-Time Voice Intelligence
 
-- **Powered by Vapi.ai**: Talk to your farm data like you talk to a human.
+- **Cloudflare voice agent**: tap *Call Agent* and talk to your farm data like you talk to a human (see the root README).
 - **Latency-Optimized**: Uses Cloudflare Tunnels for ultra-low latency voice responses.
 - **Context-Aware**: Remembers previous questions in the conversation (e.g., "What about water?" knows you're talking about the previously mentioned crop).
 
@@ -68,9 +68,8 @@ Create a `.env` file in the root directory:
 CLOUDFLARE_ACCOUNT_ID=your_id
 CLOUDFLARE_API_TOKEN=your_token
 
-# --- Vapi.ai (Voice) ---
-VAPI_PRIVATE_KEY=your_private_key
-VAPI_PUBLIC_KEY=your_public_key
+# --- Voice/chat agent (Cloudflare Worker) ---
+VITE_AGENT_URL=https://agribot.<your-subdomain>.workers.dev
 
 # --- Google Earth Engine ---
 # Absolute path to your JSON key file
@@ -85,7 +84,7 @@ REDIS_URL=redis://localhost:6379
 
 #### Option A: Lightweight Local Mode (Recommended for testing)
 
-Uses a single script to start the Backend, Cloudflare Tunnel, Vapi Updater, and Frontend.
+Starts the optional Python dashboard backend and the Vite dev server (voice/chat run on the Cloudflare Worker).
 
 ```bash
 ./start_agribot.sh
@@ -95,7 +94,7 @@ Uses a single script to start the Backend, Cloudflare Tunnel, Vapi Updater, and 
 
 1.  **Backend**: Starts on `127.0.0.1:8000`.
 2.  **Tunnel**: Opens a secure tunnel (`https://....trycloudflare.com`).
-3.  **Vapi**: Updates your assistant with the new Tunnel URL.
+3.  **Voice**: served by the Cloudflare Worker; nothing to sync.
 4.  **Frontend**: Launches on `http://localhost:5173`.
 5.  **Bonus**: You can connect a deployed Cloudflare Pages frontend to your local backend by appending `?api_url=https://your-tunnel-url.trycloudflare.com`.
 
@@ -113,13 +112,12 @@ For a production-grade setup with Redis and Celery:
 
 ```mermaid
 graph TD
-    User[Farmer (Voice/Chat)] -->|WebSocket| Vapi[Vapi.ai Voice Gateway]
-    User -->|HTTP| Dashboard[Local React Dashboard]
+    User[Farmer (Voice/Chat)] -->|WebSocket + HTTPS| Worker[Cloudflare Worker + Durable Object]
+    User -->|HTTP| Dashboard[React Dashboard served by the Worker]
 
     subgraph "Hybrid Infrastructure"
-        Vapi -->|HTTPS| Tunnel[Cloudflare Tunnel]
-        Tunnel -->|Forward| Backend[FastAPI Backend]
-        Dashboard -->|Direct| Backend
+        Worker -->|Workers AI + Vectorize + KV| Cloudflare[(Cloudflare free tier)]
+        Dashboard -.->|optional extras: map tiles, Field Vision| Backend[FastAPI Backend]
     end
 
     subgraph "Intelligence Layer"
@@ -151,10 +149,10 @@ AgriBot uses GEE to fetch ground-truth data.
 - Ensure `start_agribot.sh` is running.
 - Check if `VITE_API_URL` in `frontend/.env` is set to `http://127.0.0.1:8000`.
 
-**2. Vapi Call Drops?**
+**2. Voice call won't start?**
 
-- The Tunnel URL changes on every restart. Always use the start script to auto-update Vapi.
-- Check the script output for "Vapi Configured".
+- Open the app from your Worker URL (`https://agribot.<subdomain>.workers.dev/?code=<ACCESS_CODE>`) and allow the microphone.
+- Check `<worker-url>/api/voice/status` (free-tier governor, research index, warm weather cache).
 
 **3. "Invalid Date" or Map Errors?**
 

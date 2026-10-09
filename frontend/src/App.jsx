@@ -20,7 +20,7 @@ import useWebSocket, { ReadyState } from 'react-use-websocket'
 import ErrorBoundary from './components/ErrorBoundary'
 import Navbar from './components/Navbar'
 import SessionModal from './components/SessionModal'
-import CallModal from './components/CallModal'
+import VoiceCall from './components/VoiceCall'
 import Toast from './components/Toast'
 import QuickActions from './components/QuickActions'
 import WeatherAlerts from './components/WeatherAlerts'
@@ -80,6 +80,45 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl()
 console.log('[AgriBot] API_BASE_URL:', API_BASE_URL)
+// Is the optional Python backend (map tiles, Field Vision) configured? Only then open its dashboard WebSocket.
+const PY_BACKEND_CONFIGURED = (() => {
+    try {
+        return Boolean(new URLSearchParams(window.location.search).get('api_url') || localStorage.getItem('ag_api_url') || import.meta.env.VITE_API_URL)
+    } catch { return false }
+})()
+
+// Cloudflare Worker that serves voice calls + chat (Workers AI, Durable Objects, Vectorize).
+// Resolution: ?agent_url= (remembered) -> VITE_AGENT_URL -> same origin when served by the Worker itself.
+const getAgentUrl = () => {
+    try {
+        const params = new URLSearchParams(window.location.search)
+        const override = params.get('agent_url')
+        if (override) {
+            const u = new URL(override)
+            localStorage.setItem('ag_agent_url', u.origin)
+            return u.origin
+        }
+        const cached = localStorage.getItem('ag_agent_url')
+        if (cached) return cached
+    } catch { /* storage unavailable */ }
+    if (import.meta.env.VITE_AGENT_URL) return import.meta.env.VITE_AGENT_URL.replace(/\/+$/, '')
+    const h = window.location.hostname
+    return h === 'localhost' || h === '127.0.0.1' ? '' : window.location.origin
+}
+const AGENT_URL = getAgentUrl()
+
+// Optional shared access code (protects the free AI budget). ?code= is remembered.
+const getAccessCode = () => {
+    try {
+        const c = new URLSearchParams(window.location.search).get('code')
+        if (c) localStorage.setItem('ag_access_code', c)
+        return localStorage.getItem('ag_access_code') || ''
+    } catch { return '' }
+}
+const ACCESS_CODE = getAccessCode()
+// Chat goes to the Worker when configured (shares memory with voice); otherwise the Python backend.
+const CHAT_BASE_URL = AGENT_URL || API_BASE_URL
+const chatHeaders = { 'Content-Type': 'application/json', ...(ACCESS_CODE ? { 'X-Access-Code': ACCESS_CODE } : {}) }
 
 const getWsUrl = () => {
     if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL
@@ -176,6 +215,40 @@ function App() {
     const [selectedNdviPoint, setSelectedNdviPoint] = useState(null)
 
     const [isCallModalOpen, setIsCallModalOpen] = useState(false)
+
+    // Live updates pushed by the agent during a voice call (weather card, satellite layer, map pin)
+    const handleVoiceContext = useCallback((ctx) => {
+        if (ctx.weather) setWeatherData(ctx.weather)
+        if (ctx.satellite) {
+            setSatelliteData((prev) => ({
+                ...prev,
+                ndvi_current: ctx.satellite.ndvi,
+                ndwi_current: ctx.satellite.ndwi,
+                water_stress_level: ctx.satellite.water_stress_level,
+                ndvi_historical_avg: ctx.satellite.ndvi_historical_avg,
+                ndvi_anomaly: ctx.satellite.ndvi_anomaly,
+                county_avg_ndvi: ctx.satellite.county_avg_ndvi,
+                relative_performance: ctx.satellite.relative_performance
+            }))
+        }
+        if (ctx.location?.lat && ctx.location?.lon) {
+            setLocation({ lat: ctx.location.lat, lon: ctx.location.lon, label: ctx.location.label || 'Voice Query Location', zoom: 13 })
+        }
+        if (ctx.sources?.length) setSources(ctx.sources)
+    }, [])
+
+    // When a call ends, mirror what was said into the chat history
+    const handleCallEnded = useCallback((transcript) => {
+        if (!transcript?.length) return
+        setMessages((prev) => ([
+            ...prev,
+            ...transcript.filter((m) => m.text).map((m) => ({
+                role: m.role,
+                content: m.text,
+                timestamp: new Date(m.timestamp || Date.now()).toISOString()
+            }))
+        ]))
+    }, [])
     const [isResetModalOpen, setIsResetModalOpen] = useState(false)
     const [isListening, setIsListening] = useState(false)
     const recognitionRef = useRef(null)
@@ -208,7 +281,7 @@ function App() {
 
     const fetchLocationData = useCallback(async (lat, lon) => {
         setIsLoadingWeather(true)
-        const telemetryUrl = `${API_BASE_URL}/api/location/telemetry`
+        const telemetryUrl = `${CHAT_BASE_URL}/api/location/telemetry`
         
         console.log(`[Telemetry] Fetching from: ${telemetryUrl}`, { lat, lon })
 
@@ -263,9 +336,10 @@ function App() {
         shouldReconnect: () => true,
         reconnectAttempts: 10,
         reconnectInterval: 3000
-    })
+    }, PY_BACKEND_CONFIGURED || !AGENT_URL)
 
-    const isConnected = readyState === ReadyState.OPEN
+    // With the Cloudflare Worker serving the app there is nothing to "connect": voice opens its own socket per call
+    const isConnected = PY_BACKEND_CONFIGURED || !AGENT_URL ? readyState === ReadyState.OPEN : true
 
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024)
 
@@ -291,6 +365,18 @@ function App() {
             switch (data.type) {
                 case 'thinking':
                     setIsThinking(true)
+                    break
+                case 'voice_user':
+                    // Caller's words from a live phone call (mirrors the chat transcript)
+                    setIsThinking(true)
+                    setMessages((prev) => ([...prev, {
+                        role: 'user',
+                        content: payload.text,
+                        timestamp: data.timestamp
+                    }]))
+                    break
+                case 'voice_idle':
+                    setIsThinking(false)
                     break
                 case 'weather':
                     setWeatherData(payload)
@@ -454,9 +540,9 @@ function App() {
 
     const handleResetConfirm = async () => {
         try {
-            await fetch(`${API_BASE_URL}/api/reset`, {
+            await fetch(`${CHAT_BASE_URL}/api/reset`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: chatHeaders,
                 body: JSON.stringify({ session_id: sessionId })
             })
 
@@ -499,9 +585,9 @@ function App() {
         setQuery('')
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+            const response = await fetch(`${CHAT_BASE_URL}/api/analyze`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: chatHeaders,
                 body: JSON.stringify({
                     query: currentQuery,
                     lat: location.lat,
@@ -510,7 +596,19 @@ function App() {
                 })
             })
 
-            const data = await response.json()
+            const data = await response.json().catch(() => ({}))
+
+            if (!response.ok || !data.full_response) {
+                const reason = response.status === 401 || response.status === 403
+                    ? 'This assistant needs an access code. Open the link you were given (it ends in ?code=...) and try again.'
+                    : data.full_response || data.detail || 'I encountered an error while processing this request.'
+                setMessages((prev) => [...prev, {
+                    role: 'assistant',
+                    content: String(reason),
+                    timestamp: new Date().toISOString()
+                }])
+                return
+            }
 
             if (data.weather_data) setWeatherData(data.weather_data)
             if (data.satellite_data) setSatelliteData((prev) => ({ ...prev, ...data.satellite_data }))
@@ -530,7 +628,7 @@ function App() {
                 role: 'assistant',
                 content: data.full_response,
                 sources: data.sources,
-                timestamp: data.timestamp
+                timestamp: data.timestamp || new Date().toISOString()
             }])
         } catch (error) {
             console.error(error)
@@ -669,15 +767,15 @@ function App() {
                                 )}
 
                                 <motion.div variants={cardItem} className="shrink-0 mb-2">
-                                    <YieldPrediction satelliteData={satelliteData} weatherData={weatherData} apiUrl={API_BASE_URL} />
+                                    <YieldPrediction satelliteData={satelliteData} weatherData={weatherData} apiUrl={CHAT_BASE_URL} />
                                 </motion.div>
 
                                 <motion.div variants={cardItem} className="shrink-0 mb-4">
-                                    <StartupRecommender apiUrl={API_BASE_URL} />
+                                    <StartupRecommender apiUrl={CHAT_BASE_URL} />
                                 </motion.div>
 
                                 <motion.div variants={cardItem} className="shrink-0 mb-4">
-                                    <MarketTrends apiUrl={API_BASE_URL} />
+                                    <MarketTrends apiUrl={CHAT_BASE_URL} />
                                 </motion.div>
 
                                 {sectionVisible('anomaly') && weatherData && (
@@ -878,13 +976,13 @@ function App() {
                                             <AnomalyBadge weatherData={weatherData} />
                                         )}
 
-                                        <StartupRecommender apiUrl={API_BASE_URL} />
+                                        <StartupRecommender apiUrl={CHAT_BASE_URL} />
 
                                         {sectionVisible('irrigation') && (
                                             <IrrigationCalc weatherData={weatherData} unitPreference={unitPreference} />
                                         )}
 
-                                        <YieldPrediction satelliteData={satelliteData} weatherData={weatherData} apiUrl={API_BASE_URL} />
+                                        <YieldPrediction satelliteData={satelliteData} weatherData={weatherData} apiUrl={CHAT_BASE_URL} />
 
                                         <WhyBox
                                             results={ragResults}
@@ -1081,7 +1179,16 @@ function App() {
                     </motion.main>
 
                     <SessionModal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)} onConfirm={handleResetConfirm} />
-                    <CallModal isOpen={isCallModalOpen} onClose={() => setIsCallModalOpen(false)} onShowToast={showToast} />
+                    <VoiceCall
+                        isOpen={isCallModalOpen}
+                        onClose={() => setIsCallModalOpen(false)}
+                        agentUrl={AGENT_URL}
+                        sessionId={sessionId}
+                        accessCode={ACCESS_CODE}
+                        onContext={handleVoiceContext}
+                        onCallEnded={handleCallEnded}
+                        onShowToast={showToast}
+                    />
                 </div>
             )}
         </Suspense>

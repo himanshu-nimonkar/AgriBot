@@ -1,0 +1,8 @@
+worker:
+  - worker/**
+backend:
+  - backend/**
+frontend:
+  - frontend/**
+documentation:
+  - '**/*.md'
