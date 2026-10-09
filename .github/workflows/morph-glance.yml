@@ -25,6 +25,7 @@ jobs:
       - name: Run Glance Dashboard Tests
         env:
           MORPH_API_KEY: ${{ secrets.MORPH_API_KEY }}
+          DEPLOY_URL: ${{ vars.DEPLOY_URL || 'https://agribot.hnimonkar.workers.dev' }}
         run: |
           node -e "
           const { MorphClient } = require('@morphllm/morphsdk');
